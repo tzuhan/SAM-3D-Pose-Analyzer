@@ -243,9 +243,7 @@ def create_app():
                                             info="値が小さいほど、重なり合った人物の重複検出を厳しく削除します。"
                                         )
 
-                                quick_min_area.change(lambda x: x, [quick_min_area], [min_area])
-                                min_area.change(lambda x: x, [min_area], [quick_min_area])
-                                
+
                                 with gr.Row():
                                     det_btn = gr.Button("🔍 検出開始", variant="primary", scale=2)
                                     cancel_det_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
@@ -548,7 +546,6 @@ This tool integrates the following research works:
         
         open_folder_btn.click(lambda: subprocess.run(["explorer.exe", "."], cwd=outputs_dir), None, None)
 
-        open_folder_btn.click(lambda: subprocess.run(["explorer.exe", "."], cwd=outputs_dir), None, None)
 
     return app
 
