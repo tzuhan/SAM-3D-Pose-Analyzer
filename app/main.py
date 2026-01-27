@@ -204,6 +204,7 @@ def create_app():
                         with gr.Row():
                             quick_zip = gr.File(label="📦 全てをZIPで保存", interactive=False)
                             quick_obj = gr.File(label="OBJ (Static)", interactive=False)
+                        quick_open_folder_btn = gr.Button("📁 フォルダを開く (Local Only)", size="sm")
 
             # === Tab B: 👥 アドバンス復元 (複数人・詳細設定) ===
             with gr.TabItem("👥 アドバンス復元 (複数人/詳細)", id="tab_advanced"):
@@ -264,9 +265,6 @@ def create_app():
 
 
                                 with gr.Row():
-                                    det_btn = gr.Button("🔍 検出開始", variant="primary", scale=2)
-                                    cancel_det_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
-                                with gr.Row():
                                     save_settings_btn1 = gr.Button("💾 設定を保存", size="sm")
                                     adv_load_quick_btn1 = gr.Button("📥 クイックから読込", size="sm")
                                 
@@ -281,6 +279,9 @@ def create_app():
 """)
                                 det_results_json = gr.JSON(label="検出詳細", visible=False)
                                 det_log = gr.Textbox(label="実行ログ", lines=8, max_lines=10, interactive=False)
+                                with gr.Row():
+                                    det_btn = gr.Button("🔍 検出開始", variant="primary", scale=2)
+                                    cancel_det_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
 
                     # --- Sub-Tab 2: 3D復元・出力 ---
                     with gr.TabItem("🧍 Step 2: 3D形状生成", id="sub_rec"):
@@ -343,7 +344,7 @@ def create_app():
 
                             with gr.Column(scale=3):
                                 status_msg = gr.Markdown("")
-                                gr.Markdown("### 🖼️ プレビュー (v0.5 暫定版)")
+                                gr.Markdown("### 🖼️ プレビュー")
                                 with gr.Group():
                                     with gr.Row():
                                         vis_skeleton = gr.Image(label="スケルトン (Pose/Exact)")
@@ -630,7 +631,9 @@ This tool integrates the following research works:
             [detector_sel, conf_threshold, min_area, inf_type, fov_slider, det_status_msg]
         )
         
-        open_folder_btn.click(lambda: subprocess.run(["explorer.exe", "."], cwd=outputs_dir), None, None)
+        open_folder_fn = lambda: subprocess.run(["explorer.exe", "."], cwd=outputs_dir)
+        open_folder_btn.click(open_folder_fn, None, None)
+        quick_open_folder_btn.click(open_folder_fn, None, None)
 
 
     return app

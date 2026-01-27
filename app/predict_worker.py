@@ -411,16 +411,33 @@ if __name__ == "__main__":
                 # 深度 (Z) の取得
                 yc, _ = np.where(mask)
                 if len(yc) > 0:
-                    z_val = float(np.nanmedian(depth_map[mask & (np.arange(img_bgr.shape[0])[:, None] >= np.percentile(yc, 90))]))
-                    # X, Y オフセットの計算
-                    xoff = (px - cx_img) * z_val / f_pix
-                    yoff = (py - cy_img) * z_val / f_pix
+                    # 人物全体の深度分布を取得
+                    person_depths = depth_map[mask]
+                    # 背景(0)を除外
+                    valid_depths = person_depths[person_depths > 1e-3]
                     
-                    # 3D座標の更新 (MHR形式: X, Y, Z)
-                    for k in ['pred_keypoints_3d', 'pred_vertices']:
-                        r[k][..., 0] += xoff
-                        r[k][..., 1] += yoff
-                        r[k][..., 2] += z_val
+                    if len(valid_depths) > 0:
+                        # 以前は足元(90%付近)のみを見ていたが、姿勢によって不安定なため、
+                        # 全体のメディアンと足元のパーセンタイルを組み合わせて安定させる
+                        z_median = np.median(valid_depths)
+                        z_feet = np.percentile(valid_depths, 90) # 奥行き方向の最大(奥)に近い値
+                        # 形状モデルの原点(Center)から足元までの距離を考慮しつつ配置
+                        # SAM3D Bodyの出力は通常、骨盤付近が原点
+                        z_val = float((z_median + z_feet) / 2)
+                        
+                        # X, Y オフセットの計算
+                        xoff = (px - cx_img) * z_val / f_pix
+                        yoff = (py - cy_img) * z_val / f_pix
+                        
+                        print(f"    ℹ️ MoGe2 Projection: Z={z_val:.3f}, Offsets=({xoff:.3f}, {yoff:.3f}), FOV={fov_deg}")
+                        
+                        # 3D座標の更新 (MHR形式: X, Y, Z)
+                        for k in ['pred_keypoints_3d', 'pred_vertices']:
+                            r[k][..., 0] += xoff
+                            r[k][..., 1] += yoff
+                            r[k][..., 2] += z_val
+                    else:
+                        print(f"    ⚠ Warning: No valid depth found in mask for ID {pid}")
             else:
                 # MoGe オフの場合: 
                 # 複数人が重ならないよう、1.2m ずつ X 軸方向にずらして配置する
