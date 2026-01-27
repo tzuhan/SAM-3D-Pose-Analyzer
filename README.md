@@ -4,6 +4,19 @@ AI を活用して、一枚の画像（または動画フレーム）から **�
 
 ---
 
+## 🛠️ 事前準備 (Preparation)
+
+本ツール（Google Colab および ローカル環境）の利用には、以下の準備が必要です。
+
+1.  **Hugging Face アカウントの作成**: [Hugging Face](https://huggingface.co/) でアカウントを作成してください。
+2.  **Access Token の取得**: [Settings -> Access Tokens](https://huggingface.co/settings/tokens) から `read` 権限のトークンを取得してください。
+3.  **モデルの利用承諾**: 以下のモデルリポジトリにアクセスし、各ページの **"Agree and access repository"** ボタンを押して利用を承諾してください。
+    - [facebook/sam-3d-body](https://huggingface.co/facebook/sam-3d-body) (または関連する Meta のモデルリポジトリ)
+    - ※ Meta 社のモデル（SAM3 等）は、Hugging Face 上で承諾が必要な場合があります。
+
+> [!IMPORTANT]
+> **Google Colab ユーザーへ**: 起動時にトークンの入力を求められます。承諾が済んでいないと、モデルのダウンロード時にエラーが発生します。
+
 ## 📸 主な機能 (Features)
 
 - **⚡ クイック復元 (1人専用)**: 画像を投げてボタンを押すだけで、最速で 3D 化が可能です。AI が人物を一瞬で見つけ出し、ボーンとメッシュを生成します。
@@ -27,9 +40,8 @@ AI を活用して、一枚の画像（または動画フレーム）から **�
 
 - [**SAM 3D Pose Analyzer on Colab**](https://colab.research.google.com/github/chchannel/SAM-3D-Pose-Analyzer/blob/main/sam_3d_pose_analyzer_colab.ipynb)
     1.  **Hugging Face ログイン**: セル1(Step 1)を実行し、表示されるプロンプトにトークンを入力します。
-    2.  **環境構築**: セル2(Step 2)を実行します。自動的に必要なモデルや依存関係がセットアップされます（**約 10〜15 分かかります**）。
-    3.  **アプリ起動**: セル3(Step 3)を実行し、発行される `public URL (gradio.live)` をクリックして起動します。
-        - **⚡ クイック復元タブ** を使えば、約 60〜80 秒で 3D モデルが手に入ります。
+    2.  **環境構築**: セル2(Step 2)を実行します（約 10〜15 分）。
+    3.  **アプリ起動**: セル3(Step 3)を実行し、発行される `public URL (gradio.live)` をクリック。
 
 ### 2. ローカル環境 (Local Installation)
 WSL2 または Linux 環境での動作を想定しています。
@@ -54,11 +66,7 @@ python app/main.py
 
 - **生成データ (Output Assets)**: 商用・非商用を問わず、**自由にご利用いただけます。**
 - **ソースコード (This Repository)**: 非商用利用に限定され、無断再配布は禁止されています。
-- **技術基盤**: 以下の各公式リポジトリのライセンス条件を継承します。
-    - [SAM 3 D Body (Meta)](https://github.com/facebookresearch/sam-3d-body)
-    - [SAM 3 (Meta)](https://github.com/facebookresearch/sam3)
-    - [MoGe (Microsoft)](https://github.com/microsoft/MoGe)
-    - [Detectron2 (Meta)](https://github.com/facebookresearch/detectron2)
+- **技術基盤**: SAM 3 D Body (Meta), SAM 3 (Meta), MoGe (Microsoft), Detectron2 (Meta) などのライセンスに準じます。
 
 ## 🤝 謝辞 (Acknowledgments / Attribution)
 
