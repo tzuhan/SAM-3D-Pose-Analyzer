@@ -367,7 +367,7 @@ if __name__ == "__main__":
     person_count_total = 0 # 複数人時のオフセット用
     for m in to_p:
         pid = m['id']; mask = m['segmentation']; tmp = os.path.join(OUTPUT_DIR, f"temp_{pid}.jpg")
-        print(f"  -> Processing target ID {pid} (Index: {person_count_total})...")
+        print(f"  -> Processing target ID {pid} (Processing {person_count_total + 1} of {len(to_p)})...")
         person_count_total += 1
         
         # マスクの形状補正ロジック (略)

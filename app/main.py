@@ -437,27 +437,47 @@ This tool integrates the following research works:
             # プログレスバーの管理
             progress(0, desc="🚀 処理を開始中...")
             for log_c in run_worker_cmd_yield(cmd, "3D復元処理"):
-                # ログから最新の進捗をパースしてプログレスバーを更新 (後ろから判定することで、常に最新状態を表示)
-                if "[Step 5]" in log_c: 
-                    progress(0.95, desc="📽️ Step 5: プレビュー生成中...")
-                elif "[Step 4]" in log_c: 
-                    progress(0.85, desc="📦 Step 4: ファイル保存中...")
+                # === プログレスバーの更新ロジック (堅牢なパース) ===
+                p_val = None
+                p_desc = None
+                # 最新の状態を優先するために後ろから探すか、階層的に判定する
+                if "✅ SUCCESS" in log_c:
+                    p_val, p_desc = 1.0, "✅ 全ての処理が完了しました！"
+                elif "[Step 5]" in log_c:
+                    p_val, p_desc = 0.95, "📽️ Step 5: プレビューGLBを生成中..."
+                elif "[Step 4]" in log_c:
+                    p_val, p_desc = 0.85, "📦 Step 4: ファイルを保存中..."
                 elif "Processing target ID" in log_c:
+                    # ID ではなく "Processing X of Y" から確実な進捗を計算
                     try:
                         import re
-                        m_targets = re.findall(r"Processing target ID (\d+)", log_c)
-                        if m_targets:
-                            idx = int(m_targets[-1]) # 最後のキャッチしたIDを使う
-                            p_val = 0.3 + (idx / max(1, len(targets))) * 0.5
-                            progress(p_val, desc=f"⏳ 3D復元実行中 (ID: {idx})...")
-                    except: pass
-                elif "Loading" in log_c and log_c.split('\n')[-2] and "Loading" in log_c.split('\n')[-2]:
-                    progress(progress.value if hasattr(progress, 'value') else 0.3, desc="🧠 AIモデルをロード中...")
-                elif "Cleaning up" in log_c and log_c.split('\n')[-2] and "Cleaning up" in log_c.split('\n')[-2]:
-                    progress(progress.value if hasattr(progress, 'value') else 0.1, desc="🧹 メモリを解放中...")
-                elif "[Step 3]" in log_c: progress(0.3, desc="🦴 Step 3: 3D形状復元中...")
-                elif "[Step 2]" in log_c: progress(0.2, desc="🗺️ Step 2: 深度推定中...")
-                elif "[Step 1]" in log_c: progress(0.1, desc="🔍 Step 1: 人物検出中...")
+                        m_prog = re.findall(r"Processing (\d+) of (\d+)", log_c)
+                        if m_prog:
+                            curr, total = map(int, m_prog[-1])
+                            # Step 3 の範囲を 0.4 ～ 0.8 に設定
+                            p_val = 0.4 + ((curr - 1) / max(1, total)) * 0.4
+                            p_desc = f"⏳ 3D形状を復元中 ({curr}/{total})..."
+                        else:
+                            p_val, p_desc = 0.4, "⏳ 3D形状を計算中..."
+                    except:
+                        p_val, p_desc = 0.4, "⏳ 3D形状を計算中..."
+                elif "Loading SAM 3D Body model" in log_c:
+                    p_val, p_desc = 0.35, "🧠 AIモデルをロード中 (数秒かかります)..."
+                elif "[Step 3]" in log_c:
+                    p_val, p_desc = 0.3, "🦴 Step 3: 3D形状の復元を開始..."
+                elif "Cleaning up Step 2" in log_c:
+                    p_val, p_desc = 0.28, "🧹 深度推定のメモリを解放中..."
+                elif "[Step 2]" in log_c:
+                    p_val, p_desc = 0.2, "🗺️ Step 2: 深度推定中 (MoGe2)..."
+                elif "Cleaning up Step 1" in log_c:
+                    p_val, p_desc = 0.18, "🧹 検出モデルのメモリを解放中..."
+                elif "[Step 1]" in log_c:
+                    p_val, p_desc = 0.1, "🔍 Step 1: 人物検出中..."
+                
+                if p_val is not None:
+                    # 異常値ガード (1.0を超えるとバーが消える等の挙動を防ぐ)
+                    p_val = max(0.0, min(0.99, p_val))
+                    progress(p_val, desc=p_desc)
 
                 yield image, None, None, None, [], [], [], None, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
                 if "✅ SUCCESS" in log_c: success = True
