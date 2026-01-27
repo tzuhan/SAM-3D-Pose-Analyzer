@@ -98,8 +98,8 @@ def ensure_jpg(image_path):
         # 透過除去とJPG変換を一括で行う (Alpha Composite)
         # モードに関わらず一度RGBA化して白背景に重ねるのが最も確実
         img_rgba = img.convert("RGBA")
-        canvas = Image.new("RGBA", img_rgba.size, (255, 255, 255, 255))
-        # 白背景の上に画像を合成
+        canvas = Image.new("RGBA", img_rgba.size, (255, 0, 0, 255)) # TEST: RED BACKGROUND
+        # 赤背景の上に画像を合成
         img_final = Image.alpha_composite(canvas, img_rgba).convert("RGB")
             
         # ブラウザキャッシュ回避のためのタイムスタンプ
