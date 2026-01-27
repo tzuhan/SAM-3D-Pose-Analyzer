@@ -15,6 +15,8 @@ outputs_dir = os.path.join(base_dir, "outputs")
 uploads_dir = os.path.join(base_dir, "uploads")
 debug_dir = os.path.join(outputs_dir, "debug_masks")
 settings_path = os.path.join(base_dir, "settings.json")
+worker_script = os.path.join(base_dir, "predict_worker.py")
+LOADING_IMG = os.path.join(base_dir, "assets", "processing.png")
 os.makedirs(outputs_dir, exist_ok=True)
 os.makedirs(uploads_dir, exist_ok=True)
 
@@ -137,7 +139,6 @@ def ensure_jpg(image_path):
 
 def create_app():
     defaults = load_settings()
-    worker_script = os.path.join(base_dir, "predict_worker.py")
 
     with gr.Blocks(title="SAM 3D : Pose Analyzer") as app:
         gr.Markdown("# 🧍 SAM 3D : Pose Analyzer")
@@ -482,7 +483,7 @@ This tool integrates the following research works:
                     p_val = max(0.0, min(0.99, p_val))
                     progress(p_val, desc=p_desc)
 
-                yield image, None, None, None, [], [], [], None, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
+                yield image, LOADING_IMG, LOADING_IMG, LOADING_IMG, [LOADING_IMG], [LOADING_IMG], [LOADING_IMG], LOADING_IMG, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
@@ -535,6 +536,10 @@ This tool integrates the following research works:
 
         # --- One-Click Events ---
         def on_quick_recovery(image, det_name, conf, area, inf_mode, fov, progress=gr.Progress()):
+            # ステータスバー表示の改善
+            loading_msg = "🚀 3D復元を開始中..."
+            yield image, LOADING_IMG, LOADING_IMG, LOADING_IMG, LOADING_IMG, LOADING_IMG, loading_msg, ""
+            
             # 内部的に lightning=True で on_3d_recovery を呼び出す
             # on_3d_recovery の引数構成に合わせる
             # (image, detector, text, conf, area, b_scale, nms, targets, inf_mode, moge_active, clear, fov, zip_active, is_lightning)
