@@ -408,6 +408,11 @@ This tool integrates the following research works:
             # targetsが空（未選択）の場合は「全員（None）」として扱う
             target_str = ",".join(targets) if targets else ""
             
+            # 古いプレビューGLBファイルを掃除
+            for f in glob.glob(os.path.join(outputs_dir, "output_preview_combined_*.glb")):
+                try: os.remove(f)
+                except: pass
+            
             # ⚡ 超速モード時は設定を強制上書き
             real_detector = "vitdet" if is_lightning else detector
             real_moge = False if is_lightning else moge_active
@@ -452,10 +457,13 @@ This tool integrates the following research works:
             bvh = sorted(glob.glob(os.path.join(outputs_dir, "output_*.bvh")))
             fbx = sorted(glob.glob(os.path.join(outputs_dir, "output_*.fbx")))
             obj = sorted(glob.glob(os.path.join(outputs_dir, "output_*.obj")))
-            preview_glb = os.path.join(outputs_dir, "output_preview_combined.glb")
+            
+            # プレビュー用の統合GLB (タイムスタンプ付き) を探す
+            glbs = sorted(glob.glob(os.path.join(outputs_dir, "output_preview_combined_*.glb")))
+            preview_glb = glbs[-1] if glbs else None
             
             # プレビュー用の統合GLBを表示
-            target_glb = preview_glb if os.path.exists(preview_glb) else None
+            target_glb = gr.update(value=preview_glb, visible=True) if preview_glb and os.path.exists(preview_glb) else None
             
             if not fbx and not bvh:
                 yield image, None, None, None, [], [], [], None, "⚠ 完了（ファイルが生成されませんでした）", log_c
@@ -473,7 +481,9 @@ This tool integrates the following research works:
                         # 成果物ファイルをコピー
                         for f in bvh + fbx + obj:
                             if os.path.exists(f): shutil.copy(f, zip_src)
-                        if os.path.exists(preview_glb): shutil.copy(preview_glb, zip_src)
+                        # プレビューGLBも最新のものを同梱
+                        if preview_glb and os.path.exists(preview_glb):
+                            shutil.copy(preview_glb, os.path.join(zip_src, "output_preview_combined.glb"))
                         if os.path.exists(v_skel): shutil.copy(v_skel, zip_src)
                         if os.path.exists(v_moge): shutil.copy(v_moge, zip_src)
                         

@@ -354,9 +354,11 @@ if __name__ == "__main__":
     viz = SkeletonVisualizer(radius=4, line_width=2); viz.set_pose_meta(pose_info); v_img = img_bgr.copy()
 
     all_json_paths = []
+    person_count_total = 0 # 複数人時のオフセット用
     for m in to_p:
         pid = m['id']; mask = m['segmentation']; tmp = os.path.join(OUTPUT_DIR, f"temp_{pid}.jpg")
-        print(f"  -> Processing target ID {pid}...")
+        print(f"  -> Processing target ID {pid} (Index: {person_count_total})...")
+        person_count_total += 1
         
         # マスクの形状補正ロジック (略)
         if mask.shape[:2] != img_bgr.shape[:2]:
@@ -409,6 +411,14 @@ if __name__ == "__main__":
                         r[k][..., 0] += xoff
                         r[k][..., 1] += yoff
                         r[k][..., 2] += z_val
+            else:
+                # MoGe オフの場合: 
+                # 複数人が重ならないよう、1.2m ずつ X 軸方向にずらして配置する
+                offset_x = (person_count_total - 1) * 1.2
+                if offset_x != 0:
+                    print(f"    ℹ️ (MoGe Off) Applying horizontal offset: {offset_x:.2f}m")
+                    for k in ['pred_keypoints_3d', 'pred_vertices']:
+                        r[k][..., 0] += offset_x
             
             v_img = viz.draw_skeleton(v_img, np.hstack([r["pred_keypoints_2d"], np.ones((70,1))]))
             r['faces'] = est.faces; np.save(os.path.join(OUTPUT_DIR, f"output_{pid}.npy"), r)
@@ -469,7 +479,8 @@ except (AttributeError, RuntimeError):
     if all_json_paths:
         print("--- [Step 5] Generating combined GLB for preview ---")
         comb_script = os.path.join(BASE_DIR, "convert", "lib", "blender_scene_combiner.py")
-        glb_out = os.path.join(OUTPUT_DIR, "output_preview_combined.glb")
+        ts = int(time.time())
+        glb_out = os.path.join(OUTPUT_DIR, f"output_preview_combined_{ts}.glb")
         subprocess.run(["blender", "--background", "--python", comb_script, "--", glb_out] + all_json_paths, capture_output=False)
         if os.path.exists(glb_out):
             print("    ✅ Combined GLB generated.")
