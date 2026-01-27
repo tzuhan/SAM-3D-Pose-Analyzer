@@ -1,5 +1,7 @@
-import sys
+import bpy
 import os
+import sys
+import json
 try:
     import numpy as np
 except ImportError:
