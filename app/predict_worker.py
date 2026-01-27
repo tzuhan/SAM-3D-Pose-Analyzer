@@ -338,6 +338,7 @@ if __name__ == "__main__":
     all_json_paths = []
     for m in to_p:
         pid = m['id']; mask = m['segmentation']; tmp = os.path.join(OUTPUT_DIR, f"temp_{pid}.jpg")
+        print(f"  -> Processing target ID {pid}...")
         
         # マスクの形状補正ロジック (略)
         if mask.shape[:2] != img_bgr.shape[:2]:
@@ -356,7 +357,11 @@ if __name__ == "__main__":
 
         try:
             r = est.process_one_image(tmp, inference_type=args.inference_type)
+            if not r:
+                print(f"    ⚠ Warning: No prediction returned for ID {pid}")
+                continue
             r = r[0] if isinstance(r, list) else r
+            print(f"    ✅ Prediction success for ID {pid}")
             for k in r:
                 if torch.is_tensor(r[k]): r[k] = r[k].cpu().numpy()
                 if isinstance(r[k], np.ndarray): r[k] = np.nan_to_num(r[k], nan=0.0)

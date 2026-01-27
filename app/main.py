@@ -34,7 +34,7 @@ def kill_running_processes():
 
 def load_settings():
     default_settings = {
-        "detector_name": "sam3", "text_prompt": "person", "conf_threshold": 0.5, "min_area": 1000,
+        "detector_name": "sam3", "text_prompt": "person", "conf_threshold": 0.5, "min_area": 10000,
         "inference_type": "full (body+hand)",
         "use_moge": True,
         "clear_mem": True,
