@@ -84,33 +84,34 @@ def run_worker_cmd_yield(cmd, desc):
         yield full_log + f"\n✅ SUCCESS: 完了\n"
 
 def ensure_jpg(image_path):
-    """Gradioの一時ファイルやクリップボード画像（PNG等）を透過除去済みのJPGに強制変換し、uploadsフォルダに保存する"""
+    """どんな画像でも強制的に『白背景のJPG』に焼き込む。"""
     if not image_path or not os.path.exists(image_path): 
         return image_path
     
-    # すでに変換済みのファイルであればスキップ（無限ループ防止）
     if "_mppa_cv_" in os.path.basename(image_path):
         return image_path
 
     try:
         img = Image.open(image_path)
         
-        # 透過除去とJPG変換を一括で行う (Alpha Composite)
-        # モードに関わらず一度RGBA化して白背景に重ねるのが最も確実
-        img_rgba = img.convert("RGBA")
-        canvas = Image.new("RGBA", img_rgba.size, (255, 0, 0, 255)) # TEST: RED BACKGROUND
-        # 赤背景の上に画像を合成
-        img_final = Image.alpha_composite(canvas, img_rgba).convert("RGB")
+        # 究極に安全な透過除去: 
+        # 1. どんな入力でもRGBAに変換
+        rgba = img.convert("RGBA")
+        # 2. 真っ白な(255,255,255)下地を作成
+        white_bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+        # 3. 下地の上に画像を重ねる
+        final_rgba = Image.alpha_composite(white_bg, rgba)
+        # 4. RGBに落として白背景を確定
+        img_final = final_rgba.convert("RGB")
             
-        # ブラウザキャッシュ回避のためのタイムスタンプ
         import time
         ts = int(time.time() * 1000)
         path_jpg = os.path.join(uploads_dir, f"input_rec_{ts}_mppa_cv_.jpg")
         img_final.save(path_jpg, "JPEG", quality=95)
-        print(f"📸 Image optimized to white-background JPG (saved to uploads): {path_jpg}")
+        print(f"📸 Robustly converted to white-background JPG: {path_jpg}")
         return path_jpg
     except Exception as e:
-        print(f"⚠️ Image conversion failed: {e}")
+        print(f"⚠️ Robust conversion failed: {e}")
         return image_path
 
 def create_app():
@@ -137,6 +138,7 @@ def create_app():
                     with gr.Column(scale=1):
                         gr.Markdown("### 📸 画像のアップロード")
                         quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350)
+                        quick_converted_img = gr.Image(label="📸 変換後 (Preview)", type="filepath", interactive=False, height=350, visible=False)
                         quick_run_btn = gr.Button("⚡ 3D復元を一括実行", variant="primary", size="lg")
                         quick_status = gr.Markdown("画像をアップロードしてボタンを押してください")
                         
@@ -166,6 +168,7 @@ def create_app():
                         with gr.Row():
                             with gr.Column(scale=1): # 左重心
                                 input_img = gr.Image(label="入力画像", type="filepath", height=280)
+                                converted_img = gr.Image(label="📸 変換後 (Preview)", type="filepath", interactive=False, height=280, visible=False)
                                 
                                 gr.Markdown("### 🎯 生成対象の選択")
                                 with gr.Group():
@@ -352,16 +355,16 @@ This tool integrates the following research works:
             log_c = ""
             success = False
             progress(0, desc="🔍 人物スキャンを開始中...")
-            yield image, [], {}, "", gr.update(), "🚀 実行中...", log_c
+            yield image, gr.update(value=image, visible=True), [], {}, "", gr.update(), "🚀 実行中...", log_c
             for log_c in run_worker_cmd_yield(cmd, "人物検出"):
                 if "Loading" in log_c: progress(0.2, desc="🧠 モデルを読み込み中...")
                 elif "Running" in log_c: progress(0.5, desc="⚡ 人物を検出中...")
                 elif "Cleaning up" in log_c: progress(0.9, desc="🧹 後処理中...")
-                yield image, [], {}, "", gr.update(), "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
+                yield image, gr.update(value=image, visible=True), [], {}, "", gr.update(), "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
-                yield image, [], {}, "", gr.update(choices=[], value=[]), "❌ 失敗", log_c
+                yield image, gr.update(visible=False), [], {}, "", gr.update(choices=[], value=[]), "❌ 失敗", log_c
                 return
 
             previews = sorted(glob.glob(os.path.join(debug_dir, "*.jpg")))
@@ -371,9 +374,9 @@ This tool integrates the following research works:
                     det_data = json.load(f)
             choices = [str(d['id']) for d in det_data]
             progress(1.0, desc="✅ スキャンが完了しました！")
-            yield image, previews, det_data, datetime.now().strftime("%H%M%S"), gr.update(choices=choices, value=choices), "✅ 完了", log_c
+            yield image, gr.update(value=image, visible=True), previews, det_data, datetime.now().strftime("%H%M%S"), gr.update(choices=choices, value=choices), "✅ 完了", log_c
  
-        det_job = det_btn.click(on_detect, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, gr.State(False)], [input_img, det_preview, det_results_json, session_id, target_id_checks, det_status_msg, log_output])
+        det_job = det_btn.click(on_detect, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, gr.State(False)], [input_img, converted_img, det_preview, det_results_json, session_id, target_id_checks, det_status_msg, log_output])
         cancel_det_btn.click(kill_running_processes, None, [log_output], cancels=[det_job])
 
         select_all_btn.click(lambda x: [str(d['id']) for d in x] if x else [], [det_results_json], [target_id_checks])

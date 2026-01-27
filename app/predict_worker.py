@@ -131,13 +131,12 @@ if __name__ == "__main__":
             print(f"📏 Resizing image from {pil_img.size} to max 2048px...")
             pil_img.thumbnail((2048, 2048), PIL.Image.LANCZOS)
         
-        # 透過情報を白背景で埋めてRGB化 (重要: 単純な convert("RGB") は背景が黒くなる)
-        if pil_img.mode in ("RGBA", "LA", "P"):
-            pil_img_rgba = pil_img.convert("RGBA")
-            canvas = PIL.Image.new("RGBA", pil_img_rgba.size, (255, 0, 0, 255)) # TEST: RED BACKGROUND
-            pil_img = PIL.Image.alpha_composite(canvas, pil_img_rgba).convert("RGB")
-        else:
-            pil_img = pil_img.convert("RGB")
+        # --- ROBUST TRANSPARENCY HANDLING (Force White Background) ---
+        rgba = pil_img.convert("RGBA")
+        canvas = PIL.Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+        # 透過があれば白背景の上に合成、不透明ならそのまま上書きされる
+        pil_img = PIL.Image.alpha_composite(canvas, rgba).convert("RGB")
+        # -------------------------------------------------------------
             
         img_bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
     except Exception as e:
