@@ -6,6 +6,7 @@ env/
 
 # Data & Models (巨大または自動生成なので除外)
 weights/
+!weights/body/model_config.yaml
 repos/
 output/
 app/outputs/

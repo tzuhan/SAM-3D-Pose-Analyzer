@@ -38,6 +38,7 @@ def download():
     print("Downloading SAM 3D Body models...")
     hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="model.ckpt", local_dir="weights/body")
     hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="assets/mhr_model.pt", local_dir="weights/body")
+    hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="model_config.yaml", local_dir="weights/body")
     
     # SAM 3 model
     if not os.path.exists("weights/body/sam3.pt"):
