@@ -145,11 +145,11 @@ def create_app():
                 with gr.Row():
                     with gr.Column(scale=1):
                         gr.Markdown("### 📸 画像のアップロード")
-                        quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350, image_mode="RGBA")
-                        quick_converted_img = gr.Image(label="📸 変換後 (Preview)", type="filepath", interactive=False, height=350, visible=False)
+                        quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350, image_mode="RGBA", format="png")
                         quick_run_btn = gr.Button("⚡ 3D復元を一括実行", variant="primary", size="lg")
                         quick_cancel_btn = gr.Button("⏹️ 停止", variant="stop")
                         quick_status = gr.Markdown("画像をアップロードしてボタンを押してください")
+                        quick_log = gr.Textbox(label="実行ログ", lines=6, max_lines=10, interactive=False)
                         
                         gr.Markdown("---")
                         gr.Markdown("""
@@ -176,8 +176,7 @@ def create_app():
                     with gr.TabItem("🔍 Step 1: 人物スキャン", id="sub_det"):
                         with gr.Row():
                             with gr.Column(scale=1): # 左重心
-                                input_img = gr.Image(label="入力画像", type="filepath", height=280, image_mode="RGBA")
-                                converted_img = gr.Image(label="📸 変換後 (Preview)", type="filepath", interactive=False, height=280, visible=False)
+                                input_img = gr.Image(label="入力画像", type="filepath", height=280, image_mode="RGBA", format="png")
                                 
                                 gr.Markdown("### 🎯 生成対象の選択")
                                 with gr.Group():
@@ -243,6 +242,7 @@ def create_app():
 """)
                                 det_status_msg = gr.Markdown("")
                                 det_results_json = gr.JSON(label="検出詳細", visible=False)
+                                det_log = gr.Textbox(label="実行ログ", lines=8, max_lines=10, interactive=False)
 
                     # --- Sub-Tab 2: 3D復元・出力 ---
                     with gr.TabItem("🧍 Step 2: 3D形状生成", id="sub_rec"):
@@ -355,7 +355,7 @@ This tool integrates the following research works:
         # --- Logic ---
         def on_detect(image, detector, text, conf, area, b_scale, nms, is_lightning, progress=gr.Progress()):
             image = ensure_jpg(image)
-            if not image: yield [], {}, "", gr.update(choices=[], value=[]), "画像なし", ""
+            if not image: yield image, [], {}, "", gr.update(choices=[], value=[]), "画像なし", "", ""
             
             # ⚡ 超速モード時は強制的に vitdet
             real_detector = "vitdet" if is_lightning else detector
@@ -364,16 +364,16 @@ This tool integrates the following research works:
             log_c = ""
             success = False
             progress(0, desc="🔍 人物スキャンを開始中...")
-            yield image, gr.update(value=image, visible=True), [], {}, "", gr.update(), "🚀 実行中...", log_c
+            yield image, [], {}, "", gr.update(), "🚀 実行中...", log_c, log_c
             for log_c in run_worker_cmd_yield(cmd, "人物検出"):
                 if "Loading" in log_c: progress(0.2, desc="🧠 モデルを読み込み中...")
                 elif "Running" in log_c: progress(0.5, desc="⚡ 人物を検出中...")
                 elif "Cleaning up" in log_c: progress(0.9, desc="🧹 後処理中...")
-                yield image, gr.update(value=image, visible=True), [], {}, "", gr.update(), "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
+                yield image, [], {}, "", gr.update(), "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}", log_c
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
-                yield image, gr.update(visible=False), [], {}, "", gr.update(choices=[], value=[]), "❌ 失敗", log_c
+                yield image, [], {}, "", gr.update(choices=[], value=[]), "❌ 失敗", log_c, log_c
                 return
 
             previews = sorted(glob.glob(os.path.join(debug_dir, "*.jpg")))
@@ -383,10 +383,10 @@ This tool integrates the following research works:
                     det_data = json.load(f)
             choices = [str(d['id']) for d in det_data]
             progress(1.0, desc="✅ スキャンが完了しました！")
-            yield image, gr.update(value=image, visible=True), previews, det_data, datetime.now().strftime("%H%M%S"), gr.update(choices=choices, value=choices), "✅ 完了", log_c
+            yield image, previews, det_data, datetime.now().strftime("%H%M%S"), gr.update(choices=choices, value=choices), "✅ 完了", log_c, log_c
  
-        det_job = det_btn.click(on_detect, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, gr.State(False)], [input_img, converted_img, det_preview, det_results_json, session_id, target_id_checks, det_status_msg, log_output])
-        cancel_det_btn.click(kill_running_processes, None, [log_output], cancels=[det_job])
+        det_job = det_btn.click(on_detect, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, gr.State(False)], [input_img, det_preview, det_results_json, session_id, target_id_checks, det_status_msg, log_output, det_log])
+        cancel_det_btn.click(kill_running_processes, None, [det_log], cancels=[det_job])
 
         select_all_btn.click(lambda x: [str(d['id']) for d in x] if x else [], [det_results_json], [target_id_checks])
         deselect_all_btn.click(lambda: [], None, [target_id_checks])
@@ -501,16 +501,16 @@ This tool integrates the following research works:
             last_val = (None, None, None, [], [], [], None, "", "")
             for val in gen:
                 # 戻り値: (image, v_skel, v_moge, target_glb, bvh, fbx, obj, final_zip, status_msg, log_c)
-                # quick_tab用: (image, 3d_view, fbx, bvh, zip, obj, status)
+                # quick_tab用: (image, 3d_view, fbx, bvh, zip, obj, status, log)
                 last_val = val
-                yield val[0], gr.update(value=val[0], visible=True), val[3], val[5], val[4], val[7], val[6], val[8]
+                yield val[0], val[3], val[5], val[4], val[7], val[6], val[8], val[9]
         
         quick_job = quick_run_btn.click(
             on_quick_recovery, 
             [quick_input_img], 
-            [quick_input_img, quick_converted_img, quick_3d_view, quick_fbx, quick_bvh, quick_zip, quick_obj, quick_status]
+            [quick_input_img, quick_3d_view, quick_fbx, quick_bvh, quick_zip, quick_obj, quick_status, quick_log]
         )
-        quick_cancel_btn.click(kill_running_processes, None, [quick_status], cancels=[quick_job])
+        quick_cancel_btn.click(kill_running_processes, None, [quick_log], cancels=[quick_job])
 
         rec_job = run_3d_btn.click(on_3d_recovery, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, target_id_checks, inf_type, use_moge, clear_mem, fov_slider, auto_zip, gr.State(False)], [input_img, vis_skeleton, vis_moge, interactive_3d, output_bvh, output_fbx, output_obj, output_zip, status_msg, log_output])
         cancel_3d_btn.click(kill_running_processes, None, [log_output], cancels=[rec_job])
