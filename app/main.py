@@ -162,7 +162,6 @@ def create_app():
                         quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350, image_mode="RGBA", format="png", sources=["upload", "clipboard", "webcam"])
                         quick_run_btn = gr.Button("⚡ 3D復元を一括実行", variant="primary", size="lg")
                         quick_cancel_btn = gr.Button("⏹️ 停止", variant="stop")
-                        quick_status = gr.Markdown("画像をアップロードしてボタンを押してください")
                         quick_log = gr.Textbox(label="実行ログ", lines=6, max_lines=10, interactive=False)
                         
                         with gr.Accordion("⚙️ クイック設定", open=False):
@@ -181,6 +180,7 @@ def create_app():
 """)
 
                     with gr.Column(scale=2):
+                        quick_status = gr.Markdown("画像をアップロードしてボタンを押してください")
                         gr.Markdown("### 📦 生成結果")
                         quick_3d_view = gr.Model3D(label="3D プレビュー (GLB)", height=450)
                         with gr.Row():
@@ -254,6 +254,7 @@ def create_app():
                                 save_settings_btn1 = gr.Button("💾 デフォルトとして保存", size="sm")
                                 
                             with gr.Column(scale=3):
+                                det_status_msg = gr.Markdown("")
                                 det_preview = gr.Gallery(label="ID付きプレビュー", columns=3, height="auto")
                                 gr.Markdown("""
 ### ⏭️ 次のステップ (重要)
@@ -261,7 +262,6 @@ def create_app():
 2. 左側の **[対象 ID]** リストで、その番号にチェックを入れます。
 3. すぐ右の **『🧍 Step 2: 3D形状生成』** タブをクリックして移動してください。
 """)
-                                det_status_msg = gr.Markdown("")
                                 det_results_json = gr.JSON(label="検出詳細", visible=False)
                                 det_log = gr.Textbox(label="実行ログ", lines=8, max_lines=10, interactive=False)
 
@@ -323,6 +323,7 @@ def create_app():
                                 # log_output は右カラムへ移動
 
                             with gr.Column(scale=3):
+                                status_msg = gr.Markdown("")
                                 gr.Markdown("### 🖼️ プレビュー (v0.5 暫定版)")
                                 with gr.Group():
                                     with gr.Row():
@@ -370,7 +371,6 @@ This tool integrates the following research works:
                                 
                                 gr.Markdown("### 📜 実行ログ")
                                 log_output = gr.Textbox(label="", lines=12, max_lines=20, interactive=False)
-                                status_msg = gr.Markdown("")
 
         # --- Logic ---
         def on_detect(image, detector, text, conf, area, b_scale, nms, is_lightning, progress=gr.Progress()):
