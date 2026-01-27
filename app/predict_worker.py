@@ -89,8 +89,16 @@ for p in [DETECTRON2_REPO, DETECTRON2_STUB, MOGE_ROOT, SAM3_ROOT, SAM3D_ROOT]:
 
 # (旧式のカスタムローダーは HumanDetector への移行に伴い削除)
 
-def cleanup_outputs():
-    if os.path.exists(OUTPUT_DIR): shutil.rmtree(OUTPUT_DIR)
+def cleanup_outputs(preserve_path=None):
+    if os.path.exists(OUTPUT_DIR):
+        for f in os.listdir(OUTPUT_DIR):
+            p = os.path.join(OUTPUT_DIR, f)
+            if os.path.isfile(p):
+                if preserve_path and os.path.abspath(p) == os.path.abspath(preserve_path):
+                    continue
+                os.remove(p)
+            elif os.path.isdir(p):
+                shutil.rmtree(p)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
@@ -116,7 +124,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     time_start = time.time()
-    cleanup_outputs(); device = "cuda" if torch.cuda.is_available() else "cpu"
+    cleanup_outputs(args.image_path); device = "cuda" if torch.cuda.is_available() else "cpu"
     
     # 画像読み込み (EXIF回転対応 & 自動リサイズ)
     try:
