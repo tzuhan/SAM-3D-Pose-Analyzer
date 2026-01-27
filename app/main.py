@@ -7,6 +7,7 @@ import glob
 import json
 from datetime import datetime
 import gradio as gr
+from PIL import Image
 
 # パス設定
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -79,6 +80,32 @@ def run_worker_cmd_yield(cmd, desc):
         yield full_log + f"\n❌ ERROR: 終了コード {process.returncode}\n"
     else:
         yield full_log + f"\n✅ SUCCESS: 完了\n"
+
+def ensure_jpg(image_path):
+    """Gradioの一時ファイルやクリップボード画像（PNG等）をJPGに変換し、透過を処理する"""
+    if not image_path or not os.path.exists(image_path): 
+        return image_path
+    try:
+        img = Image.open(image_path)
+        # すでにRGBのJPGならそのまま
+        if img.format == "JPEG" and img.mode == "RGB":
+            return image_path
+            
+        # 透過がある場合は白背景で塗りつぶす
+        if img.mode in ("RGBA", "P", "LA"):
+            new_img = Image.new("RGB", img.size, (255, 255, 255))
+            mask = img.split()[-1] if img.mode in ("RGBA", "LA") else None
+            new_img.paste(img, mask=mask)
+            img = new_img
+        else:
+            img = img.convert("RGB")
+            
+        path_jpg = os.path.join(outputs_dir, f"input_{datetime.now().strftime('%H%M%S')}.jpg")
+        img.save(path_jpg, "JPEG", quality=95)
+        return path_jpg
+    except Exception as e:
+        print(f"⚠️ Image conversion failed: {e}")
+        return image_path
 
 def create_app():
     defaults = load_settings()
@@ -309,6 +336,7 @@ This tool integrates the following research works:
 
         # --- Logic ---
         def on_detect(image, detector, text, conf, area, b_scale, nms, is_lightning, progress=gr.Progress()):
+            image = ensure_jpg(image)
             if not image: yield [], {}, "", gr.update(choices=[], value=[]), "画像なし", ""
             
             # ⚡ 超速モード時は強制的に vitdet
@@ -345,6 +373,7 @@ This tool integrates the following research works:
         deselect_all_btn.click(lambda: [], None, [target_id_checks])
 
         def on_3d_recovery(image, detector, text, conf, area, b_scale, nms, targets, inf_mode, moge_active, clear, fov, zip_active, is_lightning, progress=gr.Progress()):
+            image = ensure_jpg(image)
             if not image: yield None, None, None, [], [], [], None, "画像なし", ""
             # targetsが空（未選択）の場合は「全員（None）」として扱う
             target_str = ",".join(targets) if targets else ""
@@ -385,7 +414,7 @@ This tool integrates the following research works:
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
-                yield None, None, None, [], [], [], "❌ 失敗", log_c
+                yield None, None, None, [], [], [], None, "❌ 失敗", log_c
                 return
 
             v_skel = os.path.join(outputs_dir, "output_vis_skeleton.jpg")
