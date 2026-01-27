@@ -1,17 +1,13 @@
 # SAM 3D Pose Analyzer
 
-[![v0.5.1](https://img.shields.io/badge/version-v0.5.1-blue.svg)](https://github.com/chchannel/SAM-3D-Pose-Analyzer)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-orange.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+AI を活用して、一枚の画像（または動画フレーム）から **「3D ポーズ、指の動き、体型の奥行き」** を抽出し、3D キャラクターとして復元・書き出しを行うための統合ツールです。
 
-SAM 3D Pose Analyzer は、Meta Research の **SAM 3D Body** をベースに、単一画像から 3D 人体ポーズおよびメッシュを抽出するための統合ソリューションです。
+---
 
-本ツールは、画像から人物を検出し、各種 DCC ツール（Blender, Clip Studio Paint, Unity 等）で即座に利用可能なアセットを出力します。
+## 📸 主な機能 (Features)
 
-## 🎯 主なユースケース
-
-- **Blender / Maya**: ボーンおよびスキニング済みメッシュの抽出 (FBX 形式)
-- **Clip Studio Paint**: 3D デッサン人形用ポーズデータ (BVH 形式)
+- **全身の 3D 復元**: 推定された関節位置だけでなく、キャラクターのボリューム（メッシュ）を高品質に復元します。
+- **クリップスタジオ (CLIP STUDIO PAINT) 対応**: 書き出した BVH データを直接読み込み、3D デッサン人形のポーズとして活用可能です。
     - ※出力された BVH をキャンバス上の 3D デッサン人形にドラッグ＆ドロップすることで即座にポーズが適用されます。
 - **Unity / Unreal Engine / その他**: 3D リファレンス用アセット (OBJ, GLB 形式)
 
@@ -25,8 +21,12 @@ SAM 3D Pose Analyzer は、Meta Research の **SAM 3D Body** をベースに、�
 ## 🚀 実行方法 (Quick Start)
 
 ### 1. Google Colab
+ブラウザだけで今すぐ試せます。
+
 - [**SAM 3D Pose Analyzer on Colab**](https://colab.research.google.com/github/chchannel/SAM-3D-Pose-Analyzer/blob/main/sam_3d_pose_analyzer_colab.ipynb)
-    - ※ノートブックを開き、各セルを順に実行してください
+    1.  **Hugging Face ログイン**: セル1(Step 1)を実行し、表示されるプロンプトにトークンを入力します。
+    2.  **環境構築**: セル2(Step 2)を実行します。自動的に必要なモデルや依存関係がセットアップされます（**約 10〜15 分かかります**）。
+    3.  **アプリ起動**: セル3(Step 3)を実行し、発行される `public URL (gradio.live)` をクリックして起動します。
 
 ### 2. ローカル環境 (Local Installation)
 WSL2 または Linux 環境での動作を想定しています。
@@ -55,7 +55,7 @@ python app/main.py
 - **生成データ (Output Assets)**: 商用・非商用を問わず、**自由にご利用いただけます。**
 - **ソースコード (This Repository)**: 非商用利用に限定され、無断再配布は禁止されています。
 - **技術基盤**: 以下の各公式リポジトリのライセンス条件を継承します。
-    - [SAM 3D Body (Meta)](https://github.com/facebookresearch/sam-3d-body)
+    - [SAM 3 D Body (Meta)](https://github.com/facebookresearch/sam-3d-body)
     - [SAM 3 (Meta)](https://github.com/facebookresearch/sam3)
     - [MoGe (Microsoft)](https://github.com/microsoft/MoGe)
     - [Detectron2 (Meta)](https://github.com/facebookresearch/detectron2)
