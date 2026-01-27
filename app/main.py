@@ -374,6 +374,9 @@ This tool integrates the following research works:
 
         # --- Logic ---
         def on_detect(image, detector, text, conf, area, b_scale, nms, is_lightning, progress=gr.Progress()):
+            # ステップ開始時にプレースホルダーを表示
+            yield image, [LOADING_IMG], {}, "", gr.update(choices=[], value=[]), "🔍 人物をスキャン中...", "", ""
+            
             cleanup_uploads() # 新しい処理の前に古いアップロードを掃除
             image = ensure_jpg(image)
             if not image: yield image, [], {}, "", gr.update(choices=[], value=[]), "画像なし", "", ""
@@ -483,7 +486,8 @@ This tool integrates the following research works:
                     p_val = max(0.0, min(0.99, p_val))
                     progress(p_val, desc=p_desc)
 
-                yield image, LOADING_IMG, LOADING_IMG, LOADING_IMG, [LOADING_IMG], [LOADING_IMG], [LOADING_IMG], LOADING_IMG, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
+                # gr.Model3D は直接画像を渡せないので gr.update(value=None) でクリアする
+                yield image, LOADING_IMG, LOADING_IMG, gr.update(value=None), [LOADING_IMG], [LOADING_IMG], [LOADING_IMG], LOADING_IMG, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
@@ -536,11 +540,11 @@ This tool integrates the following research works:
 
         # --- One-Click Events ---
         def on_quick_recovery(image, det_name, conf, area, inf_mode, fov, progress=gr.Progress()):
-            # ステータスバー表示の改善
-            loading_msg = "🚀 3D復元を開始中..."
-            yield image, LOADING_IMG, LOADING_IMG, LOADING_IMG, LOADING_IMG, LOADING_IMG, loading_msg, ""
+            # ステージ開始時に砂時計を表示
+            # [quick_input_img, quick_3d_view, quick_fbx, quick_bvh, quick_zip, quick_obj, quick_status, quick_log]
+            yield image, gr.update(value=None, label="⌛ 3D形状を生成中..."), LOADING_IMG, LOADING_IMG, LOADING_IMG, LOADING_IMG, "🚀 準備中...", ""
             
-            # 内部的に lightning=True で on_3d_recovery を呼び出す
+            loading_msg = "🚀 3D復元を開始中..."
             # on_3d_recovery の引数構成に合わせる
             # (image, detector, text, conf, area, b_scale, nms, targets, inf_mode, moge_active, clear, fov, zip_active, is_lightning)
             gen = on_3d_recovery(
