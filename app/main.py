@@ -84,7 +84,7 @@ def run_worker_cmd_yield(cmd, desc):
         yield full_log + f"\n✅ SUCCESS: 完了\n"
 
 def ensure_jpg(image_path):
-    """どんな画像でも強制的に『白背景のJPG』に焼き込む。"""
+    """どんな画像でも強制的に『白背景の画像』に焼き込む。RGBA-JPEGエラー回避のためPNGで保存する。"""
     if not image_path or not os.path.exists(image_path): 
         return image_path
     
@@ -109,15 +109,16 @@ def ensure_jpg(image_path):
         white_bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
         # 3. 下地の上に画像を重ねる
         final_rgba = Image.alpha_composite(white_bg, rgba)
-        # 4. RGBに落として白背景を確定
+        # 4. RGBに落として白背景を確定（ただし保存はPNGで行いRGBAエラーを防ぐ）
         img_final = final_rgba.convert("RGB")
             
         import time
         ts = int(time.time() * 1000)
-        path_jpg = os.path.join(uploads_dir, f"input_rec_{ts}_mppa_cv_.jpg")
-        img_final.save(path_jpg, "JPEG", quality=95)
-        print(f"📸 Robustly converted to white-background JPG: {path_jpg}")
-        return path_jpg
+        # 拡張子を .png にすることで Gradio の内部処理エラーを回避
+        path_png = os.path.join(uploads_dir, f"input_rec_{ts}_mppa_cv_.png")
+        img_final.save(path_png, "PNG")
+        print(f"📸 Robustly converted to white-background PNG: {path_png}")
+        return path_png
     except Exception as e:
         print(f"⚠️ Robust conversion failed: {e}")
         return image_path
