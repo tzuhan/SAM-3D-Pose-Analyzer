@@ -297,6 +297,10 @@ def create_app():
                                     label="📦 完了時に ZIP を自動生成",
                                     info="生成されたすべてのファイルを1つのZIPにまとめます。Colabでの一括ダウンロードに便利です。"
                                 )
+                                
+                                output_zip = gr.File(label="📦 全ファイルを ZIP でダウンロード", interactive=False)
+                                open_folder_btn = gr.Button("📁 フォルダを開く (Local Only)", size="sm")
+                                gr.Markdown("> [!TIP]\n> **Google Colab ユーザーへ**: 上記の「ZIP でダウンロード」ボタンを使用してください。「フォルダを開く」はColabでは動作しません。")
 
                                 gr.Markdown("### 📂 生成ファイル")
                                 with gr.Group():
@@ -304,12 +308,6 @@ def create_app():
                                     output_fbx = gr.File(label="🗂️ FBX (Mesh)", file_count="multiple", interactive=False)
                                     output_obj = gr.File(label="🗂️ OBJ (Static Mesh)", file_count="multiple", interactive=False)
                                 
-                                gr.Markdown("---")
-                                output_zip = gr.File(label="📦 全ファイルを ZIP でダウンロード", interactive=False)
-                                
-                                open_folder_btn = gr.Button("📁 フォルダを開く (Local Only)", size="sm")
-                                gr.Markdown("> [!TIP]\n> **Google Colab ユーザーへ**: 上記の「ZIP でダウンロード」ボタンを使用してください。「フォルダを開く」はColabでは動作しません。")
-
                                 gr.HTML("<hr>")
                                 # log_output は右カラムへ移動
 
