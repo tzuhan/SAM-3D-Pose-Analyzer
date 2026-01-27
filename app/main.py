@@ -145,7 +145,7 @@ def create_app():
                 with gr.Row():
                     with gr.Column(scale=1):
                         gr.Markdown("### 📸 画像のアップロード")
-                        quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350)
+                        quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350, image_mode="RGBA")
                         quick_converted_img = gr.Image(label="📸 変換後 (Preview)", type="filepath", interactive=False, height=350, visible=False)
                         quick_run_btn = gr.Button("⚡ 3D復元を一括実行", variant="primary", size="lg")
                         quick_cancel_btn = gr.Button("⏹️ 停止", variant="stop")
@@ -176,7 +176,7 @@ def create_app():
                     with gr.TabItem("🔍 Step 1: 人物スキャン", id="sub_det"):
                         with gr.Row():
                             with gr.Column(scale=1): # 左重心
-                                input_img = gr.Image(label="入力画像", type="filepath", height=280)
+                                input_img = gr.Image(label="入力画像", type="filepath", height=280, image_mode="RGBA")
                                 converted_img = gr.Image(label="📸 変換後 (Preview)", type="filepath", interactive=False, height=280, visible=False)
                                 
                                 gr.Markdown("### 🎯 生成対象の選択")
