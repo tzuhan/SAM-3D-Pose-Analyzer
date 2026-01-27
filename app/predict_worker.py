@@ -338,11 +338,17 @@ if __name__ == "__main__":
     print(f"--- [Step 3] SAM 3DB: 3D Recovery (Mode: {args.inference_type}) ---")
     clear_memory()
     
-    to_p = [m for m in valid_masks if str(m['id']) in args.target_ids.split(",")] if args.target_ids else valid_masks
+    target_id_list = args.target_ids.split(",") if args.target_ids else []
+    if target_id_list:
+        to_p = [m for m in valid_masks if str(m['id']) in target_id_list]
+    else:
+        # オートモード（クイック復元等）: 検出された全員を処理対象にする
+        to_p = valid_masks
+    
     print(f"--- Targets to process: {[m['id'] for m in to_p]} (Total: {len(to_p)}) ---")
     
     if not to_p:
-        print("⚠ No persons selected for 3D recovery.")
+        print("⚠ No persons found or selected for 3D recovery.")
         sys.exit(0)
 
     from sam_3d_body import load_sam_3d_body, SAM3DBodyEstimator
