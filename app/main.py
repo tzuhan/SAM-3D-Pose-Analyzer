@@ -374,8 +374,8 @@ This tool integrates the following research works:
 
         # --- Logic ---
         def on_detect(image, detector, text, conf, area, b_scale, nms, is_lightning, progress=gr.Progress()):
-            # ステップ開始時にプレースホルダーを表示
-            yield image, [LOADING_IMG], {}, "", gr.update(choices=[], value=[]), "🔍 人物をスキャン中...", "", ""
+            # ステップ開始時の表示をクリア
+            yield image, [], {}, "", gr.update(choices=[], value=[]), "🔍 人物をスキャン中...", "", ""
             
             cleanup_uploads() # 新しい処理の前に古いアップロードを掃除
             image = ensure_jpg(image)
@@ -486,8 +486,7 @@ This tool integrates the following research works:
                     p_val = max(0.0, min(0.99, p_val))
                     progress(p_val, desc=p_desc)
 
-                # gr.Model3D は直接画像を渡せないので gr.update(value=None) でクリアする
-                yield image, LOADING_IMG, LOADING_IMG, gr.update(value=None), [LOADING_IMG], [LOADING_IMG], [LOADING_IMG], LOADING_IMG, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
+                yield image, None, None, gr.update(value=None), [], [], [], None, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
@@ -540,9 +539,8 @@ This tool integrates the following research works:
 
         # --- One-Click Events ---
         def on_quick_recovery(image, det_name, conf, area, inf_mode, fov, progress=gr.Progress()):
-            # ステージ開始時に砂時計を表示
             # [quick_input_img, quick_3d_view, quick_fbx, quick_bvh, quick_zip, quick_obj, quick_status, quick_log]
-            yield image, gr.update(value=None, label="⌛ 3D形状を生成中..."), LOADING_IMG, LOADING_IMG, LOADING_IMG, LOADING_IMG, "🚀 準備中...", ""
+            yield image, gr.update(value=None, label="⌛ 3D形状を生成中..."), None, None, None, None, "🚀 準備中...", ""
             
             loading_msg = "🚀 3D復元を開始中..."
             # on_3d_recovery の引数構成に合わせる
