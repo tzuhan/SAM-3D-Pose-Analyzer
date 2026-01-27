@@ -173,7 +173,6 @@ def create_app():
                         gr.Markdown("""
 #### 💡 このモードの特徴
 - **全自動**: 人物検出と3D復元をワンクリックで連続実行します。
-- **多人数対応**: 画像内の全員を自動でスキャンし、横に並べて配置します。
 - **ボーン重視**: 背景の配置(MoGe)をオフにして計算を軽量化しています。
 """)
 
@@ -209,7 +208,7 @@ def create_app():
                                         ["sam3", "vitdet"], 
                                         value=defaults["detector_name"], 
                                         label="検出モデル",
-                                        info="人物を切り出すAIを選びます。sam3は服や小物の精度が高いですが少し時間がかかります。"
+                                        info="sam3: イラスト対応・高精度。 vitdet: 写真に強く高速ですが、イラストの検出は苦手です。"
                                     )
                                     text_prompt = gr.Textbox(
                                         value=defaults["text_prompt"], 
