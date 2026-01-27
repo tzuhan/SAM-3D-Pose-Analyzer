@@ -167,6 +167,7 @@ def create_app():
                             quick_min_area = gr.Slider(100, 50000, value=defaults["min_area"], step=100, label="除外サイズ (Min Area)")
                             quick_inf_type = gr.Radio(["body", "full (body+hand)"], value=defaults["inference_type"], label="推論モード")
                             quick_fov_slider = gr.Slider(30, 120, value=defaults["fov"], label="カメラ画角 (FOV)")
+                            quick_save_btn = gr.Button("💾 設定を保存", size="sm")
                             
                         gr.Markdown("---")
                         gr.Markdown("""
@@ -543,6 +544,12 @@ This tool integrates the following research works:
 
         for b in [save_settings_btn1, save_settings_btn2]:
             b.click(save_settings_fn, [detector_sel, text_prompt, conf_threshold, min_area, inf_type, use_moge, clear_mem, fov_slider, box_scale, nms_thr, auto_zip], [status_msg])
+        
+        quick_save_btn.click(
+            save_settings_fn, 
+            [quick_detector_sel, text_prompt, quick_conf_threshold, quick_min_area, quick_inf_type, use_moge, clear_mem, quick_fov_slider, box_scale, nms_thr, auto_zip], 
+            [quick_status]
+        )
         
         open_folder_btn.click(lambda: subprocess.run(["explorer.exe", "."], cwd=outputs_dir), None, None)
 
