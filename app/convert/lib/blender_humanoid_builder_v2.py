@@ -1,9 +1,19 @@
-
-import bpy
-import os
 import sys
-import json
-import numpy as np
+import os
+try:
+    import numpy as np
+except ImportError:
+    # Search in system site-packages (Colab/Ubuntu default)
+    # Colab usually uses Python 3.10, 3.11, or 3.12
+    for p in ["/usr/local/lib/python3.10/dist-packages", "/usr/local/lib/python3.11/dist-packages", "/usr/local/lib/python3.12/dist-packages", "/usr/lib/python3/dist-packages"]:
+        if os.path.exists(p) and p not in sys.path:
+            sys.path.append(p)
+    try:
+        import numpy as np
+    except ImportError:
+        # Final fallback: Blender 3.0.1 might need python3-numpy from apt
+        print("⚠ Warning: numpy not found. Please ensure 'python3-numpy' is installed via apt.")
+        raise
 from mathutils import Vector
 
 def create_and_export_fbx_final(data, export_path):

@@ -416,7 +416,27 @@ if __name__ == "__main__":
             obj_out = os.path.join(OUTPUT_DIR, f'output_{pid}.obj')
             obj_out_fixed = obj_out.replace('\\', '/')
             tjp_fixed = tjp.replace('\\', '/')
-            blender_script_obj = f"import bpy,os,json; bpy.ops.wm.read_factory_settings(use_empty=True); d=json.load(open('{tjp_fixed}')); m=bpy.data.meshes.new('Mesh'); o=bpy.data.objects.new('Mesh',m); bpy.context.collection.objects.link(o); m.from_pydata([(v[0],v[2],-v[1]) for v in d['vertices']],[],d['faces']); bpy.context.view_layer.objects.active=o; o.select_set(True); bpy.ops.wm.obj_export(filepath='{obj_out_fixed}', export_selected_objects=True)"
+            # Blender 3.0.x (Colab) と 3.2+ (最新) の両対応
+            blender_script_obj = f"""
+import bpy,os,json,sys
+try:
+    import numpy as np
+except ImportError:
+    for p in ["/usr/local/lib/python3.10/dist-packages", "/usr/local/lib/python3.11/dist-packages", "/usr/local/lib/python3.12/dist-packages", "/usr/lib/python3/dist-packages"]:
+        if os.path.exists(p) and p not in sys.path: sys.path.append(p)
+bpy.ops.wm.read_factory_settings(use_empty=True)
+d=json.load(open('{tjp_fixed}'))
+m=bpy.data.meshes.new('Mesh')
+o=bpy.data.objects.new('Mesh',m)
+bpy.context.collection.objects.link(o)
+m.from_pydata([(v[0],v[2],-v[1]) for v in d['vertices']],[],d['faces'])
+bpy.context.view_layer.objects.active=o
+o.select_set(True)
+try:
+    bpy.ops.wm.obj_export(filepath='{obj_out_fixed}', export_selected_objects=True)
+except (AttributeError, RuntimeError):
+    bpy.ops.export_scene.obj(filepath='{obj_out_fixed}', use_selection=True)
+"""
             subprocess.run(["blender", "--background", "--python-expr", blender_script_obj], capture_output=False)
             if os.path.exists(obj_out):
                 print(f"      ✅ OBJ generated for ID {pid}")

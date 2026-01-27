@@ -7,7 +7,7 @@ echo "🚀 SAM 3D Pose Analyzer の環境を構築中..."
 apt-get update && apt-get install -y \
     ffmpeg libsm6 libxext6 libgl1-mesa-glx \
     libosmesa6 libosmesa6-dev libglu1-mesa freeglut3-dev \
-    blender
+    blender python3-numpy
 
 # 2. Python 依存関係のインストール
 # utils3d や triton の競合回避のため、先に個別にインストールします

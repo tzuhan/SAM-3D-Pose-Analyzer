@@ -1,9 +1,15 @@
-
-import bpy
-import os
 import sys
-import json
-import numpy as np
+import os
+try:
+    import numpy as np
+except ImportError:
+    for p in ["/usr/local/lib/python3.10/dist-packages", "/usr/local/lib/python3.11/dist-packages", "/usr/local/lib/python3.12/dist-packages", "/usr/lib/python3/dist-packages"]:
+        if os.path.exists(p) and p not in sys.path:
+            sys.path.append(p)
+    try:
+        import numpy as np
+    except ImportError:
+        raise
 from mathutils import Vector
 
 def combine_and_export_glb(json_paths, export_path):
