@@ -87,12 +87,6 @@ for p in [DETECTRON2_REPO, DETECTRON2_STUB, MOGE_ROOT, SAM3_ROOT, SAM3D_ROOT]:
     if os.path.exists(p) and p not in sys.path:
         sys.path.insert(0, p)
 
-from sam3 import build_sam3_image_model
-from sam3.model.sam3_image_processor import Sam3Processor
-from sam_3d_body import load_sam_3d_body, SAM3DBodyEstimator
-from sam_3d_body.visualization.skeleton_visualizer import SkeletonVisualizer
-from sam_3d_body.metadata.mhr70 import pose_info
-
 # (旧式のカスタムローダーは HumanDetector への移行に伴い削除)
 
 def cleanup_outputs():
@@ -155,19 +149,25 @@ if __name__ == "__main__":
         if args.detector_name == "sam3":
             local_sam3 = os.path.join(WEIGHTS_ROOT, "sam3.pt")
             if os.path.exists(local_sam3):
-                print(f"📦 Local SAM3 checkpoint found at {local_sam3}. Using local mode.")
+                print(f"📦 Local SAM3 checkpoint found. Loading...")
                 from sam3.model_builder import build_sam3_image_model
                 from sam3.model.sam3_image_processor import Sam3Processor
                 m_s3 = build_sam3_image_model(checkpoint_path=local_sam3, load_from_HF=False, device=device)
-                detector = HumanDetector(name="sam3", device=device)
+                
+                # HumanDetectorを介さず直接構成（他モデルの二重読み込みを完全に防止）
+                class SimpleDetector: pass
+                detector = SimpleDetector()
+                detector.device = device
                 detector.detector = m_s3
                 detector.processor = Sam3Processor(m_s3, device=device)
             else:
-                detector = HumanDetector(name=args.detector_name, device=device)
+                print(f"  -> Initializing SAM3 (Online mode)...")
+                detector = HumanDetector(name="sam3", device=device)
             
-            # 生の出力を取得するために processor を直接叩く (sam3_run と同様の処理)
-            img_rgb = PIL.Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
-            inference_state = detector.processor.set_image(img_rgb)
+            # 生の出力を取得
+            print(f"  -> Running SAM3 inference...")
+            img_rgb_pil = PIL.Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+            inference_state = detector.processor.set_image(img_rgb_pil)
             raw_sam3_output = detector.processor.set_text_prompt(state=inference_state, prompt=args.text_prompt)
             boxes = raw_sam3_output["boxes"].cpu().numpy()
             scores = raw_sam3_output["scores"].cpu().numpy()
@@ -186,7 +186,10 @@ if __name__ == "__main__":
             # マスクも保持
             raw_sam3_masks = raw_sam3_output["masks"][keep].cpu().numpy()
         else:
-            detector = HumanDetector(name=args.detector_name, device=device, path=det_path)
+            if 'detector' not in locals():
+                detector = HumanDetector(name=args.detector_name, device=device, path=det_path)
+                
+            print(f"  -> Running {args.detector_name} inference (prompt: {args.text_prompt})...")
             boxes = detector.run_human_detection(img_bgr, bbox_thr=args.conf_threshold, nms_thr=args.nms_thr)
             raw_sam3_masks = None
             
@@ -223,8 +226,7 @@ if __name__ == "__main__":
                 'score': 1.0, 
                 'bbox': [float(x) for x in box] 
             })
-        else:
-            print(f"  Box {i} rejected: area {area} <= {args.min_area}")
+        # ログ過多によるスタック防止のため、除外ログを抑制
 
     print(f"  Detected {len(valid_masks)} persons (after filtering).")
     
@@ -331,6 +333,10 @@ if __name__ == "__main__":
         print("⚠ No persons selected for 3D recovery.")
         sys.exit(0)
 
+    from sam_3d_body import load_sam_3d_body, SAM3DBodyEstimator
+    from sam_3d_body.visualization.skeleton_visualizer import SkeletonVisualizer
+    from sam_3d_body.metadata.mhr70 import pose_info
+    
     model_3d, cfg_3d = load_sam_3d_body(SAM3DB_CKPT, device, MHR_MODEL_PT)
     est = SAM3DBodyEstimator(model_3d, cfg_3d)
     viz = SkeletonVisualizer(radius=4, line_width=2); viz.set_pose_meta(pose_info); v_img = img_bgr.copy()

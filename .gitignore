@@ -27,3 +27,6 @@ app/wrapper doc/
 # OS
 .DS_Store
 Thumbs.db
+
+# Backups
+backup/

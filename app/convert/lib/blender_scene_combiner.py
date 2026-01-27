@@ -1,3 +1,4 @@
+
 import bpy
 import os
 import sys
@@ -11,7 +12,7 @@ except ImportError:
     try:
         import numpy as np
     except ImportError:
-        raise
+        pass
 from mathutils import Vector
 
 def combine_and_export_glb(json_paths, export_path):

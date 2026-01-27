@@ -1,3 +1,4 @@
+
 import bpy
 import os
 import sys
@@ -183,33 +184,6 @@ def create_and_export_fbx_final(data, export_path):
         # Using blender_app indices: [45, 44, 43, 42] -> P, I, D, Tip
         
         # Unity: Proximal, Intermediate, Distal
-        names = ["Proximal", "Intermediate", "Distal"]
-        
-        # Root (Hand to Finger Base)
-        root_name = f"{prefix}Root" # Not standard Unity, usually implicit.
-        # Unity Humanoid expects: LeftHand -> LeftThumbProximal
-        # blender_app creates a 'root' bone first? 
-        # "br.head = wrist, br.tail = indices[0]"
-        # Unity Humanoid doesn't strictly need metacarpals for fingers except thumb.
-        # But for structure matching, let's keep it but maybe not map it?
-        # Actually Unity allows Metacarpals.
-        # Let's map directly if possible.
-        # If we skip root bone, we connect Hand to Proximal.
-        # blender_app: wrist -> [indices[0]] is "root_bb_". [0]->[1] is "1_bb_".
-        # indices[0] is knuckle?
-        # Let's verify MHR indices.
-        
-        # For Example Thumb: [45, 44, 43, 42]
-        # 45 is probably CMC? 
-        # Unity Thumb: Proximal, Intermediate, Distal.
-        # blender_app creates 4 segments + end?
-        # Let's follow blender_app structure but name them sensibly.
-        # Or map to Unity Standard:
-        # Thumb: Proximal, Intermediate, Distal
-        # Index: Proximal, Intermediate, Distal
-        
-        # Let's try to map the first 3 segments to Proximal/Inter/Distal.
-        
         parts = ["Proximal", "Intermediate", "Distal"]
         parent_bone = eb[h_bone]
         
