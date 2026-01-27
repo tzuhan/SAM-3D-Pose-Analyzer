@@ -12,9 +12,11 @@ from PIL import Image
 # パス設定
 base_dir = os.path.dirname(os.path.abspath(__file__))
 outputs_dir = os.path.join(base_dir, "outputs")
+uploads_dir = os.path.join(base_dir, "uploads")
 debug_dir = os.path.join(outputs_dir, "debug_masks")
 settings_path = os.path.join(base_dir, "settings.json")
 os.makedirs(outputs_dir, exist_ok=True)
+os.makedirs(uploads_dir, exist_ok=True)
 
 # 🚀 実行中プロセスの管理
 running_processes = []
@@ -82,11 +84,11 @@ def run_worker_cmd_yield(cmd, desc):
         yield full_log + f"\n✅ SUCCESS: 完了\n"
 
 def ensure_jpg(image_path):
-    """Gradioの一時ファイルやクリップボード画像（PNG等）を透過除去済みのJPGに強制変換する"""
+    """Gradioの一時ファイルやクリップボード画像（PNG等）を透過除去済みのJPGに強制変換し、uploadsフォルダに保存する"""
     if not image_path or not os.path.exists(image_path): 
         return image_path
     
-    # 既に最近このセッションで変換済みのファイルであればスキップ（無限ループ防止）
+    # すでに変換済みのファイルであればスキップ（無限ループ防止）
     if "_mppa_cv_" in os.path.basename(image_path):
         return image_path
 
@@ -94,18 +96,18 @@ def ensure_jpg(image_path):
         img = Image.open(image_path)
         
         # 透過除去とJPG変換を一括で行う
-        # モードに関わらず一度RGBA化して白背景に重ねるのが最も確実
+        # モードに関わらず一度RGBA化して白背景に重ねる
         canvas = Image.new("RGBA", img.size, (255, 255, 255, 255))
         img_rgba = img.convert("RGBA")
         canvas.paste(img_rgba, (0, 0), img_rgba)
         img_final = canvas.convert("RGB")
             
-        # ミリ秒を含めて完全にユニークなファイル名を作成（ブラウザキャッシュ回避）
+        # ブラウザキャッシュ回避のためのタイムスタンプ
         import time
         ts = int(time.time() * 1000)
-        path_jpg = os.path.join(outputs_dir, f"input_rec_{ts}_mppa_cv_.jpg")
+        path_jpg = os.path.join(uploads_dir, f"input_rec_{ts}_mppa_cv_.jpg")
         img_final.save(path_jpg, "JPEG", quality=95)
-        print(f"📸 Image optimized to white-background JPG: {path_jpg}")
+        print(f"📸 Image optimized to white-background JPG (saved to uploads): {path_jpg}")
         return path_jpg
     except Exception as e:
         print(f"⚠️ Image conversion failed: {e}")
@@ -527,5 +529,5 @@ if __name__ == "__main__":
         server_name="0.0.0.0", 
         server_port=server_port, 
         share=args.share,
-        allowed_paths=[outputs_dir]
+        allowed_paths=[outputs_dir, uploads_dir]
     )
