@@ -396,14 +396,20 @@ if __name__ == "__main__":
             r['faces'] = est.faces; np.save(os.path.join(OUTPUT_DIR, f"output_{pid}.npy"), r)
             
             # [Step 4] Blender: FBX/BVH/OBJ Generation
+            print(f"    --- [Step 4] Blender: FBX/BVH/OBJ Generation for ID {pid} ---")
             fbp = os.path.join(OUTPUT_DIR, f"output_{pid}.fbx"); tjp = os.path.join(OUTPUT_DIR, f"tjson_{pid}.json")
             all_json_paths.append(tjp)
             with open(tjp, 'w') as f: json.dump({"vertices": r["pred_vertices"].tolist(), "faces": est.faces.tolist(), "joints_mhr70": r["pred_keypoints_3d"].tolist()}, f)
             
             # FBX & BVH
-            subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_humanoid_builder_v2.py"), "--", tjp, fbp], capture_output=True)
+            subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_humanoid_builder_v2.py"), "--", tjp, fbp], capture_output=False)
             if os.path.exists(fbp): 
-                subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_bvh_crysta.py"), "--", fbp, os.path.join(OUTPUT_DIR, f"output_{pid}.bvh")], capture_output=True)
+                print(f"      ✅ FBX generated for ID {pid}")
+                subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_bvh_crysta.py"), "--", fbp, os.path.join(OUTPUT_DIR, f"output_{pid}.bvh")], capture_output=False)
+                if os.path.exists(os.path.join(OUTPUT_DIR, f"output_{pid}.bvh")):
+                    print(f"      ✅ BVH generated for ID {pid}")
+            else:
+                print(f"      ⚠ FBX generation FAILED for ID {pid}")
             
             # OBJ (Static Mesh) - 以前の NameError: v を修正
             # f-string 内で backslash を使えない制約を回避するため事前にパスを加工
@@ -411,7 +417,9 @@ if __name__ == "__main__":
             obj_out_fixed = obj_out.replace('\\', '/')
             tjp_fixed = tjp.replace('\\', '/')
             blender_script_obj = f"import bpy,os,json; bpy.ops.wm.read_factory_settings(use_empty=True); d=json.load(open('{tjp_fixed}')); m=bpy.data.meshes.new('Mesh'); o=bpy.data.objects.new('Mesh',m); bpy.context.collection.objects.link(o); m.from_pydata([(v[0],v[2],-v[1]) for v in d['vertices']],[],d['faces']); bpy.context.view_layer.objects.active=o; o.select_set(True); bpy.ops.wm.obj_export(filepath='{obj_out_fixed}', export_selected_objects=True)"
-            subprocess.run(["blender", "--background", "--python-expr", blender_script_obj], capture_output=True)
+            subprocess.run(["blender", "--background", "--python-expr", blender_script_obj], capture_output=False)
+            if os.path.exists(obj_out):
+                print(f"      ✅ OBJ generated for ID {pid}")
 
         except Exception as e: print(f" Error {pid}: {e}")
         finally:
@@ -423,7 +431,11 @@ if __name__ == "__main__":
         print("--- [Step 5] Generating combined GLB for preview ---")
         comb_script = os.path.join(BASE_DIR, "convert", "lib", "blender_scene_combiner.py")
         glb_out = os.path.join(OUTPUT_DIR, "output_preview_combined.glb")
-        subprocess.run(["blender", "--background", "--python", comb_script, "--", glb_out] + all_json_paths, capture_output=True)
+        subprocess.run(["blender", "--background", "--python", comb_script, "--", glb_out] + all_json_paths, capture_output=False)
+        if os.path.exists(glb_out):
+            print("    ✅ Combined GLB generated.")
+        else:
+            print("    ⚠ Combined GLB generation FAILED.")
         # 不要な一時JSONを削除
         for p in all_json_paths: 
             if os.path.exists(p): os.remove(p)
