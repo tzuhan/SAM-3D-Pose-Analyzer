@@ -82,36 +82,41 @@ def run_worker_cmd_yield(cmd, desc):
         yield full_log + f"\n✅ SUCCESS: 完了\n"
 
 def ensure_jpg(image_path):
-    """Gradioの一時ファイルやクリップボード画像（PNG等）をJPGに変換し、透過を処理する"""
+    """Gradioの一時ファイルやクリップボード画像（PNG等）を透過除去済みのJPGに強制変換する"""
     if not image_path or not os.path.exists(image_path): 
         return image_path
     
-    # すでに本関数で最近変換されたJPGファイルならスキップ（無限ループ防止）
-    if image_path.endswith(".jpg") and "converted_input_" in os.path.basename(image_path):
+    # 既に最近このセッションで変換済みのファイルであればスキップ（無限ループ防止）
+    if "_mppa_cv_" in os.path.basename(image_path):
         return image_path
 
     try:
         img = Image.open(image_path)
-        # すでにRGBのJPG且つ透過がない場合はそのまま（ただしファイル名の明示化のため再保存推奨）
-        if img.format == "JPEG" and img.mode == "RGB":
-            # return image_path # 念のため一貫性のために下で再保存
-            pass
-            
-        # 透過がある場合は白背景で塗りつぶす
-        if img.mode in ("RGBA", "P", "LA"):
+        
+        # 透過や特定のモードを処理
+        if img.mode in ("RGBA", "P", "LA") or (img.mode == "RGB" and not image_path.lower().endswith((".jpg", ".jpeg"))):
+            # 白背景を作成して合成
             new_img = Image.new("RGB", img.size, (255, 255, 255))
             if img.mode in ("RGBA", "LA"):
+                # アルファチャンネルをマスクとして使用
                 mask = img.split()[-1]
+                new_img.paste(img, mask=mask)
             else:
-                mask = img.convert("RGBA").split()[-1]
-            new_img.paste(img, mask=mask)
+                # パレット画像などの場合はRGBAに変換してから合成
+                rgba_img = img.convert("RGBA")
+                mask = rgba_img.split()[-1]
+                new_img.paste(rgba_img, mask=mask)
             img = new_img
         else:
+            # 透過がない場合も一貫性のために強制的にRGB JPGとして保存し直す
             img = img.convert("RGB")
             
-        # 変換済みファイルであることがわかる名前で保存
-        path_jpg = os.path.join(outputs_dir, f"converted_input_{datetime.now().strftime('%H%M%S')}.jpg")
+        # ミリ秒を含めて完全にユニークなファイル名を作成（ブラウザキャッシュ回避）
+        import time
+        ts = int(time.time() * 1000)
+        path_jpg = os.path.join(outputs_dir, f"input_rec_{ts}_mppa_cv_.jpg")
         img.save(path_jpg, "JPEG", quality=95)
+        print(f"📸 Image formatted to JPG: {path_jpg}")
         return path_jpg
     except Exception as e:
         print(f"⚠️ Image conversion failed: {e}")
@@ -361,7 +366,7 @@ This tool integrates the following research works:
                 if "Loading" in log_c: progress(0.2, desc="🧠 モデルを読み込み中...")
                 elif "Running" in log_c: progress(0.5, desc="⚡ 人物を検出中...")
                 elif "Cleaning up" in log_c: progress(0.9, desc="🧹 後処理中...")
-                yield image, [], {}, "", gr.update(), "🚀 実行中...", log_c
+                yield image, [], {}, "", gr.update(), "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
@@ -421,7 +426,7 @@ This tool integrates the following research works:
                 elif "[Step 4]" in log_c: progress(0.85, desc="📦 Step 4: Blenderファイル生成中...")
                 elif "[Step 5]" in log_c: progress(0.95, desc="📽️ Step 5: プレビューGLB生成中...")
 
-                yield image, None, None, None, [], [], [], None, "🚀 実行中...", log_c
+                yield image, None, None, None, [], [], [], None, "🚀 実行中...", log_c + f"\n📸 Input optimized: {os.path.basename(image)}"
                 if "✅ SUCCESS" in log_c: success = True
             
             if not success:
