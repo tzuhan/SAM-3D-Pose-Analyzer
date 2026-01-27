@@ -84,9 +84,11 @@ def save_settings_fn(mode, detector, text_prompt, conf_threshold, min_area, infe
         with open(settings_path, "w", encoding="utf-8") as f:
             json.dump(current, f, indent=4, ensure_ascii=False)
             
-        return f"✅ {mode}の設定を保存しました", "✅ 保存完了"
+        msg = f"✅ {mode}の設定を保存しました"
+        return msg, msg
     except Exception as e:
-        return f"❌ 保存失敗: {e}", f"❌ 失敗: {e}"
+        err = f"❌ 保存失敗: {e}"
+        return err, err
 
 def run_worker_cmd_yield(cmd, desc):
     global running_processes
