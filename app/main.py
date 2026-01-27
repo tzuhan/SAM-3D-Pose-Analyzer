@@ -266,7 +266,9 @@ def create_app():
                                 with gr.Row():
                                     det_btn = gr.Button("🔍 検出開始", variant="primary", scale=2)
                                     cancel_det_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
-                                save_settings_btn1 = gr.Button("💾 デフォルトとして保存", size="sm")
+                                with gr.Row():
+                                    save_settings_btn1 = gr.Button("💾 設定を保存", size="sm")
+                                    adv_load_quick_btn1 = gr.Button("📥 クイックから読込", size="sm")
                                 
                             with gr.Column(scale=3):
                                 det_status_msg = gr.Markdown("")
@@ -564,15 +566,15 @@ This tool integrates the following research works:
             # (image, detector, text, conf, area, b_scale, nms, targets, inf_mode, moge_active, clear, fov, zip_active, is_lightning)
             gen = on_3d_recovery(
                 image, 
-                det_name, defaults["text_prompt"], 
+                det_name, defaults["quick"]["text_prompt"], 
                 conf, area,
-                defaults["box_scale"], defaults["nms_thr"],
+                defaults["quick"]["box_scale"], defaults["quick"]["nms_thr"],
                 [], # targets=空 (Auto-Recovery)
                 inf_mode, 
                 False,  # moge_active (Lightning強制)
-                defaults["clear_mem"],
+                defaults["quick"]["clear_mem"],
                 fov,
-                defaults["auto_zip"],
+                defaults["quick"]["auto_zip"],
                 True, # is_lightning=True
                 progress=progress
             )
@@ -621,6 +623,11 @@ This tool integrates the following research works:
             link_settings_fn,
             [quick_detector_sel, quick_conf_threshold, quick_min_area, quick_inf_type, quick_fov_slider],
             [detector_sel, conf_threshold, min_area, inf_type, fov_slider, status_msg]
+        )
+        adv_load_quick_btn1.click(
+            link_settings_fn,
+            [quick_detector_sel, quick_conf_threshold, quick_min_area, quick_inf_type, quick_fov_slider],
+            [detector_sel, conf_threshold, min_area, inf_type, fov_slider, det_status_msg]
         )
         
         open_folder_btn.click(lambda: subprocess.run(["explorer.exe", "."], cwd=outputs_dir), None, None)
