@@ -133,10 +133,9 @@ if __name__ == "__main__":
         
         # 透過情報を白背景で埋めてRGB化 (重要: 単純な convert("RGB") は背景が黒くなる)
         if pil_img.mode in ("RGBA", "LA", "P"):
-            canvas = PIL.Image.new("RGBA", pil_img.size, (255, 255, 255, 255))
             pil_img_rgba = pil_img.convert("RGBA")
-            canvas.paste(pil_img_rgba, (0, 0), pil_img_rgba)
-            pil_img = canvas.convert("RGB")
+            canvas = PIL.Image.new("RGBA", pil_img_rgba.size, (255, 255, 255, 255))
+            pil_img = PIL.Image.alpha_composite(canvas, pil_img_rgba).convert("RGB")
         else:
             pil_img = pil_img.convert("RGB")
             
