@@ -10,8 +10,9 @@ apt-get update && apt-get install -y \
     blender
 
 # 2. Python 依存関係のインストール
-# utils3d の競合回避のため、先にインストールを試みる
-pip install utils3d --no-deps
+# utils3d や triton の競合回避のため、先に個別にインストールします
+pip install git+https://github.com/EasternJournalist/utils3d.git@3fab839f0be9931dac7c8488eb0e1600c236e183 --no-deps
+pip install triton
 pip install -r requirements.txt
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 pip install gdown huggingface_hub

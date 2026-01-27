@@ -15,15 +15,27 @@ pyyaml
 decord
 yacs
 timm
-# utils3d (setup_colab.sh で個別にインストール)
-# utils3d
-scikit-image
+python-dotenv
+json-tricks
+triton
+# SAM 3D Body & MoGe Essentials
+pytorch-lightning
+roma
+loguru
 einops
-ninja
+scikit-image
 pyrootutils
+joblib
+dill
+pandas
+seaborn
+jsonlines
+xtcocotools
+optree
+psutil
 omegaconf
 fvcore
 iopath
+ninja
 gdown
-python-dotenv
-json-tricks
+git+https://github.com/EasternJournalist/pipeline.git@866f059d2a05cde05e4a52211ec5051fd5f276d6
