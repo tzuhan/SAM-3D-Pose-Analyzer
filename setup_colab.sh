@@ -9,11 +9,12 @@ apt-get update && apt-get install -y \
     libosmesa6 libosmesa6-dev libglu1-mesa freeglut3-dev \
     blender
 
-# 2. Python 依存関係のインストール (requirements.txt を使用)
-# torch は Colab に既にある場合はスキップされるが、念のため index 指定
+# 2. Python 依存関係のインストール
+# utils3d の競合回避のため、先にインストールを試みる
+pip install utils3d --no-deps
 pip install -r requirements.txt
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-pip install gdown
+pip install gdown huggingface_hub
 
 # 3. 外部リポジトリのセットアップ (Git管理から外したコードを再取得)
 mkdir -p repos
@@ -23,24 +24,31 @@ pushd repos
 [ ! -d "MoGe" ] && git clone https://github.com/microsoft/MoGe.git
 popd
 
-# 4. モデルのダウンロード (Hugging Face から取得)
+# 4. モデルのダウンロード (Python スクリプトで確実に実行)
 mkdir -p weights/body/assets
 echo "📦 モデルチェックポイントを準備中..."
 
-# コマンドのエイリアスを設定（Colabのパス問題対策）
-HF_CLI="python3 -m huggingface_hub.commands.huggingface_cli"
+cat <<EOF > download_models.py
+import os
+from huggingface_hub import hf_hub_download
 
-# huggingface-cli を使用して facebook/sam-3d-body-dinov3 から取得
-$HF_CLI download facebook/sam-3d-body-dinov3 model.ckpt --local-dir weights/body --local-dir-use-symlinks False
-$HF_CLI download facebook/sam-3d-body-dinov3 assets/mhr_model.pt --local-dir weights/body --local-dir-use-symlinks False
+def download():
+    # SAM 3D Body models
+    print("Downloading SAM 3D Body models...")
+    hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="model.ckpt", local_dir="weights/body")
+    hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="assets/mhr_model.pt", local_dir="weights/body")
+    
+    # SAM 3 model
+    if not os.path.exists("weights/body/sam3.pt"):
+        print("Downloading SAM 3 model...")
+        path = hf_hub_download(repo_id="facebook/sam3", filename="model.pt", local_dir="weights/body")
+        os.rename(path, "weights/body/sam3.pt")
 
-# SAM3 のデフォルトチェックポイント (HumanDetector 用)
-if [ ! -f "weights/body/sam3.pt" ]; then
-    echo "📦 SAM3 モデルをダウンロード中..."
-    $HF_CLI download facebook/sam3 model.pt --local-dir weights/body --local-dir-use-symlinks False
-    if [ -f "weights/body/model.pt" ]; then
-        mv weights/body/model.pt weights/body/sam3.pt
-    fi
-fi
+if __name__ == "__main__":
+    download()
+EOF
+
+python3 download_models.py
+rm download_models.py
 
 echo "✅ セットアップ完了！"

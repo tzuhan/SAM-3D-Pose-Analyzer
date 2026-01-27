@@ -15,7 +15,8 @@ pyyaml
 decord
 yacs
 timm
-utils3d
+# utils3d (setup_colab.sh で個別にインストール)
+# utils3d
 scikit-image
 einops
 ninja
