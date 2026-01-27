@@ -494,12 +494,12 @@ This tool integrates the following research works:
                 # 戻り値: (image, v_skel, v_moge, target_glb, bvh, fbx, obj, final_zip, status_msg, log_c)
                 # quick_tab用: (image, 3d_view, fbx, bvh, zip, obj, status)
                 last_val = val
-                yield val[0], val[3], val[5], val[4], val[7], val[6], val[8]
+                yield val[0], gr.update(value=val[0], visible=True), val[3], val[5], val[4], val[7], val[6], val[8]
         
         quick_run_btn.click(
             on_quick_recovery, 
             [quick_input_img], 
-            [quick_input_img, quick_3d_view, quick_fbx, quick_bvh, quick_zip, quick_obj, quick_status]
+            [quick_input_img, quick_converted_img, quick_3d_view, quick_fbx, quick_bvh, quick_zip, quick_obj, quick_status]
         )
 
         rec_job = run_3d_btn.click(on_3d_recovery, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, target_id_checks, inf_type, use_moge, clear_mem, fov_slider, auto_zip, gr.State(False)], [input_img, vis_skeleton, vis_moge, interactive_3d, output_bvh, output_fbx, output_obj, output_zip, status_msg, log_output])
