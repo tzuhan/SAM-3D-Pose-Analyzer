@@ -97,156 +97,187 @@ def create_app():
 
         session_id = gr.State("")
 
-        with gr.Tabs() as tabs:
-            # --- Tab 1: 検出 ---
-            with gr.TabItem("1. Detection & Select (人物のスキャン)", id=0):
+        with gr.Tabs() as main_tabs:
+            # === Tab A: ⚡ クイック復元 (1人専用・最速) ===
+            with gr.TabItem("⚡ クイック復元 (1人専用)", id="tab_quick"):
                 with gr.Row():
-                    with gr.Column(scale=1): # 左重心
-                        input_img = gr.Image(label="入力画像", type="filepath", height=280)
+                    with gr.Column(scale=1):
+                        gr.Markdown("### 📸 画像のアップロード")
+                        quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350)
+                        quick_run_btn = gr.Button("⚡ 3D復元を一括実行", variant="primary", size="lg")
+                        quick_status = gr.Markdown("画像をアップロードしてボタンを押してください")
                         
-                        gr.Markdown("### 🎯 生成対象の選択")
-                        with gr.Group():
-                            target_id_checks = gr.CheckboxGroup(label="対象 ID (検出後にチェック)", choices=[], value=[])
-                            with gr.Row():
-                                select_all_btn = gr.Button("全て選択", size="sm")
-                                deselect_all_btn = gr.Button("全て解除", size="sm")
-
-                        gr.Markdown("### 🔍 検出設定")
-                        with gr.Group():
-                            detector_sel = gr.Dropdown(
-                                ["sam3", "vitdet"], 
-                                value=defaults["detector_name"], 
-                                label="検出モデル",
-                                info="人物を切り出すAIを選びます。sam3は服や小物の精度が高いですが少し時間がかかります。"
-                            )
-                            text_prompt = gr.Textbox(
-                                value=defaults["text_prompt"], 
-                                label="検索ターゲット",
-                                info="検出したいものを言葉で指定します。通常は 'person' でOKです。"
-                            )
-                            conf_threshold = gr.Slider(
-                                0.1, 1.0, 
-                                value=defaults["conf_threshold"], 
-                                label="検出感度 (Confidence)",
-                                info="値を下げると検出しやすくなりますが、人間以外を誤検出する可能性も増えます。"
-                            )
-                            min_area = gr.Slider(
-                                500, 50000, 
-                                value=defaults["min_area"], 
-                                step=500, 
-                                label="除外サイズ (Min Area)",
-                                info="この数値より小さい（遠くにいる）人物は無視します。"
-                            )
-                            with gr.Accordion("🛠️ 検出アドバンス設定", open=False):
-                                box_scale = gr.Slider(
-                                    1.0, 2.0, 
-                                    value=defaults["box_scale"], 
-                                    step=0.1,
-                                    label="ボックスの余白 (Box Scale)",
-                                    info="人物をどれくらい広めに切り出すか。姿勢推定の精度に影響します。"
-                                )
-                                nms_thr = gr.Slider(
-                                    0.1, 1.0, 
-                                    value=defaults["nms_thr"], 
-                                    label="重複除去 (NMS Threshold)",
-                                    info="値が小さいほど、重なり合った人物の重複検出を厳しく削除します。"
-                                )
-                        
-                        with gr.Row():
-                            det_btn = gr.Button("🔍 検出開始", variant="primary", scale=2)
-                            cancel_det_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
-                        save_settings_btn1 = gr.Button("💾 デフォルトとして保存", size="sm")
-                        
-                    with gr.Column(scale=3):
-                        det_preview = gr.Gallery(label="ID付きプレビュー", columns=3, height="auto")
+                        gr.Markdown("---")
                         gr.Markdown("""
+#### 💡 このモードの特徴
+- **高速**: 1人の画像に最適化された設定で処理します。
+- **全自動**: 人物検出と3D復元をワンクリックで連続実行します。
+- **ボーン重視**: 背景の配置(MoGe)をオフにして計算を軽量化しています。
+""")
+
+                    with gr.Column(scale=2):
+                        gr.Markdown("### 📦 生成結果")
+                        quick_3d_view = gr.Model3D(label="3D プレビュー (GLB)", height=450)
+                        with gr.Row():
+                            quick_fbx = gr.File(label="FBX (Mesh)", interactive=False)
+                            quick_bvh = gr.File(label="BVH (Motion)", interactive=False)
+                        with gr.Row():
+                            quick_zip = gr.File(label="📦 全てをZIPで保存", interactive=False)
+                            quick_obj = gr.File(label="OBJ (Static)", interactive=False)
+
+            # === Tab B: 👥 アドバンス復元 (複数人・詳細設定) ===
+            with gr.TabItem("👥 アドバンス復元 (複数人/詳細)", id="tab_advanced"):
+                with gr.Tabs() as advanced_tabs:
+                    # --- Sub-Tab 1: 検出 ---
+                    with gr.TabItem("🔍 Step 1: 人物スキャン", id="sub_det"):
+                        with gr.Row():
+                            with gr.Column(scale=1): # 左重心
+                                input_img = gr.Image(label="入力画像", type="filepath", height=280)
+                                
+                                gr.Markdown("### 🎯 生成対象の選択")
+                                with gr.Group():
+                                    target_id_checks = gr.CheckboxGroup(label="対象 ID (検出後にチェック)", choices=[], value=[])
+                                    with gr.Row():
+                                        select_all_btn = gr.Button("全て選択", size="sm")
+                                        deselect_all_btn = gr.Button("全て解除", size="sm")
+
+                                gr.Markdown("### 🔍 検出設定")
+                                with gr.Group():
+                                    detector_sel = gr.Dropdown(
+                                        ["sam3", "vitdet"], 
+                                        value=defaults["detector_name"], 
+                                        label="検出モデル",
+                                        info="人物を切り出すAIを選びます。sam3は服や小物の精度が高いですが少し時間がかかります。"
+                                    )
+                                    text_prompt = gr.Textbox(
+                                        value=defaults["text_prompt"], 
+                                        label="検索ターゲット",
+                                        info="検出したいものを言葉で指定します。通常は 'person' でOKです。"
+                                    )
+                                    conf_threshold = gr.Slider(
+                                        0.1, 1.0, 
+                                        value=defaults["conf_threshold"], 
+                                        label="検出感度 (Confidence)",
+                                        info="値を下げると検出しやすくなりますが、人間以外を誤検出する可能性も増えます。"
+                                    )
+                                    min_area = gr.Slider(
+                                        500, 50000, 
+                                        value=defaults["min_area"], 
+                                        step=500, 
+                                        label="除外サイズ (Min Area)",
+                                        info="この数値より小さい（遠くにいる）人物は無視します。"
+                                    )
+                                    with gr.Accordion("🛠️ 検出アドバンス設定", open=False):
+                                        box_scale = gr.Slider(
+                                            1.0, 2.0, 
+                                            value=defaults["box_scale"], 
+                                            step=0.1,
+                                            label="ボックスの余白 (Box Scale)",
+                                            info="人物をどれくらい広めに切り出すか。姿勢推定の精度に影響します。"
+                                        )
+                                        nms_thr = gr.Slider(
+                                            0.1, 1.0, 
+                                            value=defaults["nms_thr"], 
+                                            label="重複除去 (NMS Threshold)",
+                                            info="値が小さいほど、重なり合った人物の重複検出を厳しく削除します。"
+                                        )
+                                
+                                
+                                with gr.Row():
+                                    det_btn = gr.Button("🔍 検出開始", variant="primary", scale=2)
+                                    cancel_det_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
+                                save_settings_btn1 = gr.Button("💾 デフォルトとして保存", size="sm")
+                                
+                            with gr.Column(scale=3):
+                                det_preview = gr.Gallery(label="ID付きプレビュー", columns=3, height="auto")
+                                gr.Markdown("""
 ### ⏭️ 次のステップ (重要)
 1. 上の画像で、推論したい人物の **ID (番号)** を探します。
 2. 左側の **[対象 ID]** リストで、その番号にチェックを入れます。
-3. 画面最上部のオレンジ色のバーまたはタブをクリックし、**『2. 3D Recovery』へ移動**してください。
+3. すぐ右の **『🧍 Step 2: 3D形状生成』** タブをクリックして移動してください。
 """)
-                        det_status_msg = gr.Markdown("")
-                        det_results_json = gr.JSON(label="検出詳細", visible=False)
+                                det_status_msg = gr.Markdown("")
+                                det_results_json = gr.JSON(label="検出詳細", visible=False)
 
-            # --- Tab 2: 3D復元・出力 ---
-            with gr.TabItem("2. 3D Recovery (モデル生成と確認)", id=1):
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        gr.Markdown("### ⚙️ 推論設定")
-                        inf_type = gr.Dropdown(
-                            ["full (body+hand)", "body", "hand"], 
-                            value=defaults["inference_type"], 
-                            label="推論モード",
-                            info="bodyは全身のみ、fullは指先まで細かく復元を試みます。"
-                        )
-                        use_moge = gr.Checkbox(
-                            value=defaults["use_moge"], 
-                            label="空間配置 (MoGe2) 有効",
-                            info="写真を解析して、3D空間上の正しい位置に人物を立たせます。"
-                        )
-                        clear_mem = gr.Checkbox(
-                            value=defaults["clear_mem"], 
-                            label="VRAMメモリ解放",
-                            info="完了ごとにメモリを掃除します。GPUメモリが少ない(8GB以下)場合はON推奨です。"
-                        )
-                        
-                        gr.Markdown("### 📏 空間配置設定")
-                        with gr.Group():
-                            fov_slider = gr.Slider(
-                                30, 120, 
-                                value=defaults["fov"], 
-                                step=1,
-                                label="カメラ画角 (FOV)",
-                                info="広角レンズ(iPhone等)なら70~80、標準なら50前後に調整してください。"
-                            )
-                        
+                    # --- Sub-Tab 2: 3D復元・出力 ---
+                    with gr.TabItem("🧍 Step 2: 3D形状生成", id="sub_rec"):
                         with gr.Row():
-                            run_3d_btn = gr.Button("🚀 3D復元開始", variant="primary", scale=2)
-                            cancel_3d_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
-                        
-                        save_settings_btn2 = gr.Button("💾 設定保存", size="sm")
+                            with gr.Column(scale=1):
+                                gr.Markdown("### ⚙️ 推論設定")
+                                inf_type = gr.Dropdown(
+                                    ["full (body+hand)", "body", "hand"], 
+                                    value=defaults["inference_type"], 
+                                    label="推論モード",
+                                    info="bodyは全身のみ、fullは指先まで細かく復元を試みます。"
+                                )
+                                use_moge = gr.Checkbox(
+                                    value=defaults["use_moge"], 
+                                    label="空間配置 (MoGe2) 有効",
+                                    info="写真を解析して、3D空間上の正しい位置に人物を立たせます。"
+                                )
+                                clear_mem = gr.Checkbox(
+                                    value=defaults["clear_mem"], 
+                                    label="VRAMメモリ解放",
+                                    info="完了ごとにメモリを掃除します。GPUメモリが少ない(8GB以下)場合はON推奨です。"
+                                )
+                                
+                                gr.Markdown("### 📏 空間配置設定")
+                                with gr.Group():
+                                    fov_slider = gr.Slider(
+                                        30, 120, 
+                                        value=defaults["fov"], 
+                                        step=1,
+                                        label="カメラ画角 (FOV)",
+                                        info="広角レンズ(iPhone等)なら70~80、標準なら50前後に調整してください。"
+                                    )
+                                
+                                with gr.Row():
+                                    run_3d_btn = gr.Button("🚀 3D復元開始", variant="primary", scale=2)
+                                    cancel_3d_btn = gr.Button("⏹️ 停止", variant="stop", scale=1)
+                                
+                                save_settings_btn2 = gr.Button("💾 設定保存", size="sm")
 
-                        auto_zip = gr.Checkbox(
-                            value=defaults.get("auto_zip", True), 
-                            label="📦 完了時に ZIP を自動生成",
-                            info="生成されたすべてのファイルを1つのZIPにまとめます。Colabでの一括ダウンロードに便利です。"
-                        )
+                                auto_zip = gr.Checkbox(
+                                    value=defaults.get("auto_zip", True), 
+                                    label="📦 完了時に ZIP を自動生成",
+                                    info="生成されたすべてのファイルを1つのZIPにまとめます。Colabでの一括ダウンロードに便利です。"
+                                )
 
-                        gr.Markdown("### 📂 生成ファイル")
-                        with gr.Group():
-                            output_bvh = gr.File(label="🗂️ BVH (Motion)", file_count="multiple", interactive=False)
-                            output_fbx = gr.File(label="🗂️ FBX (Mesh)", file_count="multiple", interactive=False)
-                            output_obj = gr.File(label="🗂️ OBJ (Static Mesh)", file_count="multiple", interactive=False)
-                        
-                        gr.Markdown("---")
-                        output_zip = gr.File(label="📦 全ファイルを ZIP でダウンロード", interactive=False)
-                        
-                        open_folder_btn = gr.Button("📁 フォルダを開く (Local Only)", size="sm")
-                        gr.Markdown("> [!TIP]\n> **Google Colab ユーザーへ**: 上記の「ZIP でダウンロード」ボタンを使用してください。「フォルダを開く」はColabでは動作しません。")
+                                gr.Markdown("### 📂 生成ファイル")
+                                with gr.Group():
+                                    output_bvh = gr.File(label="🗂️ BVH (Motion)", file_count="multiple", interactive=False)
+                                    output_fbx = gr.File(label="🗂️ FBX (Mesh)", file_count="multiple", interactive=False)
+                                    output_obj = gr.File(label="🗂️ OBJ (Static Mesh)", file_count="multiple", interactive=False)
+                                
+                                gr.Markdown("---")
+                                output_zip = gr.File(label="📦 全ファイルを ZIP でダウンロード", interactive=False)
+                                
+                                open_folder_btn = gr.Button("📁 フォルダを開く (Local Only)", size="sm")
+                                gr.Markdown("> [!TIP]\n> **Google Colab ユーザーへ**: 上記の「ZIP でダウンロード」ボタンを使用してください。「フォルダを開く」はColabでは動作しません。")
 
-                        gr.HTML("<hr>")
-                        gr.Markdown("### 📜 実行ログ")
-                        log_output = gr.Textbox(label="", lines=12, max_lines=20, interactive=False)
+                                gr.HTML("<hr>")
+                                gr.Markdown("### 📜 実行ログ")
+                                log_output = gr.Textbox(label="", lines=12, max_lines=20, interactive=False)
 
-                    with gr.Column(scale=3):
-                        gr.Markdown("### 🖼️ プレビュー (v0.5 暫定版)")
-                        with gr.Group():
-                            with gr.Row():
-                                vis_skeleton = gr.Image(label="スケルトン (Pose/Exact)")
-                                vis_moge = gr.Image(label="深度マップ (MoGe/Exact)")
-                            interactive_3d = gr.Model3D(label="3D プレビュー (回転・拡大可能)", height=500)
-                        
-                        with gr.Group():
-                            gr.Markdown("""> [!IMPORTANT]
+                            with gr.Column(scale=3):
+                                gr.Markdown("### 🖼️ プレビュー (v0.5 暫定版)")
+                                with gr.Group():
+                                    with gr.Row():
+                                        vis_skeleton = gr.Image(label="スケルトン (Pose/Exact)")
+                                        vis_moge = gr.Image(label="深度マップ (MoGe/Exact)")
+                                    interactive_3d = gr.Model3D(label="3D プレビュー (回転・拡大可能)", height=500)
+                                
+                                with gr.Group():
+                                    gr.Markdown("""> [!IMPORTANT]
 > **💡 画面が真っ白で 3D が見えない場合**
 > ブラウザの **ハードウェアアクセラレーション** がオフになっている可能性があります。
 > 設定から「グラフィックアクセラレーションを使用する」をオンにして再起動してください。""")
-                            gr.Markdown("""> [!NOTE]
+                                    gr.Markdown("""> [!NOTE]
 > **3Dプレビューについて**: 上記の 3D プレビューはマウスで自由に**回転・ズーム**が可能です。
 > 背景画像との重畳プレビュー（Mesh Overlay）がズレる場合は、こちらで復元された 3D 形状を確認してください。""")
-                        
-                        with gr.Accordion("❓ 設定項目の詳細説明", open=False):
-                            gr.Markdown("""
+                                
+                                with gr.Accordion("❓ 設定項目の詳細説明", open=False):
+                                    gr.Markdown("""
 #### 🎯 検出設定 (Detection & Select)
 - **検出モデル**: 
     - `sam3`: 精密。服や持ち物を含めた切り出しが最も綺麗ですが、グラフィックボードの負荷が高いです。
@@ -262,9 +293,9 @@ def create_app():
 - **空間配置 (MoGe2)**: 写真の「奥行き」をAIが推測し、人物を正しい地面・距離に立たせます。
 - **VRAMメモリ解放**: 処理が終わるたびに掃除をします。VRAMが8GBのカード（3060Ti等）では常にONを推奨します。
 """)
-                        
-                        with gr.Accordion("📜 Credits & License", open=False):
-                            gr.Markdown("""
+                                
+                                with gr.Accordion("📜 Credits & License", open=False):
+                                    gr.Markdown("""
 This tool integrates the following research works:
 - **SAM 3D Body**: [Meta Research] (SAM License)
 - **MoGe**: [Microsoft Research] (MIT License)
@@ -273,13 +304,17 @@ This tool integrates the following research works:
     - ツール自体の無断商用利用・再配布は禁止します。
     - **本ツールで生成したデータ（3Dモデル等）は商用利用可能です。**
 """)
-                        
-                        status_msg = gr.Markdown("")
+                                
+                                status_msg = gr.Markdown("")
 
         # --- Logic ---
-        def on_detect(image, detector, text, conf, area, b_scale, nms, progress=gr.Progress()):
+        def on_detect(image, detector, text, conf, area, b_scale, nms, is_lightning, progress=gr.Progress()):
             if not image: yield [], {}, "", gr.update(choices=[], value=[]), "画像なし", ""
-            cmd = [sys.executable, worker_script, image, "--detector_name", detector, "--text_prompt", text, "--conf_threshold", str(conf), "--min_area", str(int(area)), "--box_scale", str(b_scale), "--nms_thr", str(nms), "--sam3_only"]
+            
+            # ⚡ 超速モード時は強制的に vitdet
+            real_detector = "vitdet" if is_lightning else detector
+            
+            cmd = [sys.executable, worker_script, image, "--detector_name", real_detector, "--text_prompt", text, "--conf_threshold", str(conf), "--min_area", str(int(area)), "--box_scale", str(b_scale), "--nms_thr", str(nms), "--sam3_only"]
             log_c = ""
             success = False
             progress(0, desc="🔍 人物スキャンを開始中...")
@@ -303,19 +338,27 @@ This tool integrates the following research works:
             progress(1.0, desc="✅ スキャンが完了しました！")
             yield previews, det_data, datetime.now().strftime("%H%M%S"), gr.update(choices=choices, value=choices), "✅ 完了", log_c
  
-        det_job = det_btn.click(on_detect, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr], [det_preview, det_results_json, session_id, target_id_checks, det_status_msg, log_output])
+        det_job = det_btn.click(on_detect, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, gr.State(False)], [det_preview, det_results_json, session_id, target_id_checks, det_status_msg, log_output])
         cancel_det_btn.click(kill_running_processes, None, [log_output], cancels=[det_job])
 
         select_all_btn.click(lambda x: [str(d['id']) for d in x] if x else [], [det_results_json], [target_id_checks])
         deselect_all_btn.click(lambda: [], None, [target_id_checks])
 
-        def on_3d_recovery(image, detector, text, conf, area, b_scale, nms, targets, inf_mode, moge_active, clear, fov, zip_active, progress=gr.Progress()):
-            if not image or not targets: yield None, None, None, [], [], [], None, "対象選択なし", ""
-            real_inf_mode = "full" if "full" in inf_mode else inf_mode
-            cmd = [sys.executable, worker_script, image, "--detector_name", detector, "--text_prompt", text, "--conf_threshold", str(conf), "--min_area", str(int(area)), "--box_scale", str(b_scale), "--nms_thr", str(nms), "--inference_type", real_inf_mode, "--fov", str(fov)]
-            if moge_active: cmd.append("--use_moge")
+        def on_3d_recovery(image, detector, text, conf, area, b_scale, nms, targets, inf_mode, moge_active, clear, fov, zip_active, is_lightning, progress=gr.Progress()):
+            if not image: yield None, None, None, [], [], [], None, "画像なし", ""
+            # targetsが空（未選択）の場合は「全員（None）」として扱う
+            target_str = ",".join(targets) if targets else ""
+            
+            # ⚡ 超速モード時は設定を強制上書き
+            real_detector = "vitdet" if is_lightning else detector
+            real_moge = False if is_lightning else moge_active
+            real_inf_mode = "body" if is_lightning else ("full" if "full" in inf_mode else inf_mode)
+            
+            cmd = [sys.executable, worker_script, image, "--detector_name", real_detector, "--text_prompt", text, "--conf_threshold", str(conf), "--min_area", str(int(area)), "--box_scale", str(b_scale), "--nms_thr", str(nms), "--inference_type", real_inf_mode, "--fov", str(fov)]
+            if real_moge: cmd.append("--use_moge")
             if clear: cmd.append("--clear_mem")
-            cmd.extend(["--target_ids", ",".join(targets)])
+            if target_str: cmd.extend(["--target_ids", target_str])
+            else: print("💡 No IDs selected. Auto-Recovery mode: processing all detected persons.")
             log_c = ""
             success = False
             
@@ -384,7 +427,43 @@ This tool integrates the following research works:
                 progress(1.0, desc="✅ すべての処理が完了しました！")
                 yield v_skel if os.path.exists(v_skel) else None, v_moge if os.path.exists(v_moge) else None, target_glb, bvh, fbx, obj, final_zip, "✅ 完了", log_c
 
-        rec_job = run_3d_btn.click(on_3d_recovery, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, target_id_checks, inf_type, use_moge, clear_mem, fov_slider, auto_zip], [vis_skeleton, vis_moge, interactive_3d, output_bvh, output_fbx, output_obj, output_zip, status_msg, log_output])
+        # --- One-Click Events ---
+        def on_quick_recovery(image, progress=gr.Progress()):
+            # 内部的に lightning=True で on_3d_recovery を呼び出す
+            # 最初の on_detect は不要（on_3d_recovery内部のコマンドが detector を走らせるため）
+            # ただし、UIへのフィードバックのために yield 構造を合わせる必要あり
+            
+            # on_3d_recovery の引数構成に合わせる
+            # (image, detector, text, conf, area, b_scale, nms, targets, inf_mode, moge_active, clear, fov, zip_active, is_lightning)
+            gen = on_3d_recovery(
+                image, 
+                defaults["detector_name"], defaults["text_prompt"], 
+                defaults["conf_threshold"], defaults["min_area"],
+                defaults["box_scale"], defaults["nms_thr"],
+                [], # targets=空 (Auto-Recovery)
+                "body", # inf_mode (Lightning強制)
+                False,  # moge_active (Lightning強制)
+                defaults["clear_mem"],
+                defaults["fov"],
+                defaults["auto_zip"],
+                True, # is_lightning=True
+                progress=progress
+            )
+            
+            last_val = (None, None, None, [], [], [], None, "", "")
+            for val in gen:
+                # 戻り値: (v_skel, v_moge, target_glb, bvh, fbx, obj, final_zip, status_msg, log_c)
+                # quick_tab用: (3d_view, fbx, bvh, zip, obj, status)
+                last_val = val
+                yield val[2], val[4], val[3], val[6], val[5], val[7]
+        
+        quick_run_btn.click(
+            on_quick_recovery, 
+            [quick_input_img], 
+            [quick_3d_view, quick_fbx, quick_bvh, quick_zip, quick_obj, quick_status]
+        )
+
+        rec_job = run_3d_btn.click(on_3d_recovery, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, target_id_checks, inf_type, use_moge, clear_mem, fov_slider, auto_zip, gr.State(False)], [vis_skeleton, vis_moge, interactive_3d, output_bvh, output_fbx, output_obj, output_zip, status_msg, log_output])
         cancel_3d_btn.click(kill_running_processes, None, [log_output], cancels=[rec_job])
  
         for b in [save_settings_btn1, save_settings_btn2]:
