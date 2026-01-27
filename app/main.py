@@ -552,17 +552,18 @@ This tool integrates the following research works:
         quick_detector_sel.change(lambda x: x, [quick_detector_sel], [detector_sel])
         detector_sel.change(lambda x: x, [detector_sel], [quick_detector_sel])
         
-        quick_conf_threshold.change(lambda x: x, [quick_conf_threshold], [conf_threshold])
-        conf_threshold.change(lambda x: x, [conf_threshold], [quick_conf_threshold])
+        # スライダーは操作中の負担を減らすため、ドラッグ放した時 (.release) に同期する
+        quick_conf_threshold.release(lambda x: x, [quick_conf_threshold], [conf_threshold])
+        conf_threshold.release(lambda x: x, [conf_threshold], [quick_conf_threshold])
         
-        quick_min_area.change(lambda x: x, [quick_min_area], [min_area])
-        min_area.change(lambda x: x, [min_area], [quick_min_area])
+        quick_min_area.release(lambda x: x, [quick_min_area], [min_area])
+        min_area.release(lambda x: x, [min_area], [quick_min_area])
         
         quick_inf_type.change(lambda x: x, [quick_inf_type], [inf_type])
         inf_type.change(lambda x: x, [inf_type], [quick_inf_type])
         
-        quick_fov_slider.change(lambda x: x, [quick_fov_slider], [fov_slider])
-        fov_slider.change(lambda x: x, [fov_slider], [quick_fov_slider])
+        quick_fov_slider.release(lambda x: x, [quick_fov_slider], [fov_slider])
+        fov_slider.release(lambda x: x, [fov_slider], [quick_fov_slider])
 
     return app
 
