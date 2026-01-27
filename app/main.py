@@ -63,14 +63,17 @@ def load_settings():
     return default_settings
 
 def save_settings_fn(detector, text_prompt, conf_threshold, min_area, inference_type, use_moge, clear_mem, fov, box_scale, nms_thr, auto_zip):
-    settings = {
-        "detector_name": detector, "text_prompt": text_prompt, "conf_threshold": conf_threshold, "min_area": min_area,
-        "inference_type": inference_type, "use_moge": use_moge, "clear_mem": clear_mem,
-        "fov": fov, "box_scale": box_scale, "nms_thr": nms_thr, "auto_zip": auto_zip
-    }
-    with open(settings_path, "w", encoding="utf-8") as f:
-        json.dump(settings, f, indent=4, ensure_ascii=False)
-    return "✅ 設定をデフォルトとして保存しました"
+    try:
+        settings = {
+            "detector_name": detector, "text_prompt": text_prompt, "conf_threshold": conf_threshold, "min_area": min_area,
+            "inference_type": inference_type, "use_moge": use_moge, "clear_mem": clear_mem,
+            "fov": fov, "box_scale": box_scale, "nms_thr": nms_thr, "auto_zip": auto_zip
+        }
+        with open(settings_path, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=4, ensure_ascii=False)
+        return "✅ 設定をデフォルトとして保存しました", "✅ 保存完了", detector, conf_threshold, min_area, inference_type, fov
+    except Exception as e:
+        return f"❌ 保存失敗: {e}", f"❌ 失敗: {e}", detector, conf_threshold, min_area, inference_type, fov
 
 def run_worker_cmd_yield(cmd, desc):
     global running_processes
@@ -567,13 +570,18 @@ This tool integrates the following research works:
         rec_job = run_3d_btn.click(on_3d_recovery, [input_img, detector_sel, text_prompt, conf_threshold, min_area, box_scale, nms_thr, target_id_checks, inf_type, use_moge, clear_mem, fov_slider, auto_zip, gr.State(False)], [input_img, vis_skeleton, vis_moge, interactive_3d, output_bvh, output_fbx, output_obj, output_zip, status_msg, log_output])
         cancel_3d_btn.click(kill_running_processes, None, [log_output], cancels=[rec_job])
 
+        # 設定保存のバインド (保存時に両方のタブの値を同期させる)
         for b in [save_settings_btn1, save_settings_btn2]:
-            b.click(save_settings_fn, [detector_sel, text_prompt, conf_threshold, min_area, inf_type, use_moge, clear_mem, fov_slider, box_scale, nms_thr, auto_zip], [status_msg])
+            b.click(
+                save_settings_fn, 
+                [detector_sel, text_prompt, conf_threshold, min_area, inf_type, use_moge, clear_mem, fov_slider, box_scale, nms_thr, auto_zip], 
+                [status_msg, det_status_msg, quick_detector_sel, quick_conf_threshold, quick_min_area, quick_inf_type, quick_fov_slider]
+            )
         
         quick_save_btn.click(
             save_settings_fn, 
             [quick_detector_sel, text_prompt, quick_conf_threshold, quick_min_area, quick_inf_type, use_moge, clear_mem, quick_fov_slider, box_scale, nms_thr, auto_zip], 
-            [quick_status]
+            [quick_status, status_msg, detector_sel, conf_threshold, min_area, inf_type, fov_slider]
         )
         
         open_folder_btn.click(lambda: subprocess.run(["explorer.exe", "."], cwd=outputs_dir), None, None)
