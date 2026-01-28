@@ -10,6 +10,7 @@ weights/
 repos/
 output/
 app/outputs/
+app/uploads/
 app/last_inference_vis.jpg
 app/settings.json
 
@@ -19,9 +20,14 @@ app/*.jpg
 app/*.png
 mppa_env_backup.yml
 
-# Docs & Reference (動作に関係ないもの)
+# Debug Scripts (作業用スクリプト)
+app/debug_*.py
+app/create_*.py
+tests/
+!tests/run_prod_fix_test.py # テスト主軸だけ残すなら!を消さずに運用
+
+# Docs & Reference
 docs/
-assets/
 app/wrapper doc/
 
 # OS
@@ -30,6 +36,3 @@ Thumbs.db
 
 # Backups
 backup/
-
-# Tests
-tests/
