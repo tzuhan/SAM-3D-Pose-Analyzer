@@ -177,12 +177,38 @@ def create_app():
                         quick_cancel_btn = gr.Button("⏹️ 停止", variant="stop")
                         quick_log = gr.Textbox(label="実行ログ", lines=6, max_lines=10, interactive=False)
                         
-                        with gr.Accordion("⚙️ クイック設定", open=False):
-                            quick_detector_sel = gr.Dropdown(["sam3", "vitdet"], value=defaults["quick"]["detector_name"], label="検出モデル")
-                            quick_conf_threshold = gr.Slider(0.1, 1.0, value=defaults["quick"]["conf_threshold"], label="検出感度 (Confidence)")
-                            quick_min_area = gr.Slider(100, 50000, value=defaults["quick"]["min_area"], step=100, label="除外サイズ (Min Area)")
-                            quick_inf_type = gr.Radio(["body", "full (body+hand)"], value=defaults["quick"]["inference_type"], label="推論モード")
-                            quick_fov_slider = gr.Slider(30, 120, value=defaults["quick"]["fov"], label="カメラ画角 (FOV)")
+                        with gr.Accordion("⚙️ クイック設定", open=True):
+                            quick_detector_sel = gr.Dropdown(
+                                ["sam3", "vitdet"], 
+                                value=defaults["quick"]["detector_name"], 
+                                label="検出モデル",
+                                info="sam3: イラスト対応・高精度。 vitdet: 写真に強く高速ですが、イラストの検出は苦手です。"
+                            )
+                            quick_conf_threshold = gr.Slider(
+                                0.1, 1.0, 
+                                value=defaults["quick"]["conf_threshold"], 
+                                label="検出感度 (Confidence)",
+                                info="値を下げると検出しやすくなりますが、人間以外を誤検出する可能性も増えます。"
+                            )
+                            quick_min_area = gr.Slider(
+                                100, 50000, 
+                                value=defaults["quick"]["min_area"], 
+                                step=100, 
+                                label="除外サイズ (Min Area)",
+                                info="この数値より小さい（遠くにいる）人物は無視します。"
+                            )
+                            quick_inf_type = gr.Radio(
+                                ["body", "full (body+hand)"], 
+                                value=defaults["quick"]["inference_type"], 
+                                label="推論モード",
+                                info="bodyは全身のみ、fullは指先まで細かく復元を試みます。"
+                            )
+                            quick_fov_slider = gr.Slider(
+                                30, 120, 
+                                value=defaults["quick"]["fov"], 
+                                label="カメラ画角 (FOV)",
+                                info="広角レンズ(iPhone等)なら70~80、標準なら50前後に調整してください。"
+                            )
                             with gr.Row():
                                 quick_save_btn = gr.Button("💾 設定を保存", size="sm")
                                 quick_load_adv_btn = gr.Button("📤 アドバンスから読込", size="sm")
