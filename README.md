@@ -25,6 +25,10 @@ Meta の **SAM 3D Body** をベースに、単一画像から即座に 3D リフ
     - ※出力された BVH をキャンバス上の 3D デッサン人形にドラッグ＆ドロップすることで即座にポーズが適用されます。
 - **様々な 3D 形式に対応**: FBX, BVH, OBJ, GLB を一括出力。Unity や Unreal Engine でリファレンスとして即座に利用可能です。
 
+  https://github.com/user-attachments/assets/55391f3d-8e08-427b-9678-463db51d8b18
+
+
+
 ## ✨ サポートしている拡張子
 
 - **FBX**: UNITY準拠アニメーション用ボーン + スキニング済みメッシュ
@@ -93,6 +97,7 @@ launch_sam3d.batをクリックすることでも起動します
 
 ---
 *Developed by Antigravity (AI Assistant) & USER.*
+
 
 
 
