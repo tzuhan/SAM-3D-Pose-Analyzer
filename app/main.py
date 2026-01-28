@@ -200,7 +200,9 @@ def create_app():
                         quick_3d_view = gr.Model3D(label="3D プレビュー (GLB)", height=450)
                         with gr.Row():
                             quick_fbx = gr.File(label="FBX (Mesh)", interactive=False)
-                            quick_bvh = gr.File(label="BVH (Motion)", interactive=False)
+                            with gr.Column():
+                                quick_bvh = gr.File(label="🗂️ BVH (Motion)", file_count="multiple", interactive=False)
+                                gr.Markdown("<small>（invertedは上下反転したものです、倒立ポーズをclipstudioPaintで読み込ませる場合、足が想定しない角度になることがあります。その際はこちらを読み込ませclipstudioPaint内で反転させてください）</small>")
                         with gr.Row():
                             quick_zip = gr.File(label="📦 全てをZIPで保存", interactive=False)
                             quick_obj = gr.File(label="OBJ (Static)", interactive=False)
@@ -336,6 +338,7 @@ def create_app():
                                 gr.Markdown("### 📂 生成ファイル")
                                 with gr.Group():
                                     output_bvh = gr.File(label="🗂️ BVH (Motion)", file_count="multiple", interactive=False)
+                                    gr.Markdown("<small>（invertedは上下反転したものです、倒立ポーズをclipstudioPaintで読み込ませる場合、足が想定しない角度になることがあります。その際はこちらを読み込ませclipstudioPaint内で反転させてください）</small>")
                                     output_fbx = gr.File(label="🗂️ FBX (Mesh)", file_count="multiple", interactive=False)
                                     output_obj = gr.File(label="🗂️ OBJ (Static Mesh)", file_count="multiple", interactive=False)
                                 
@@ -582,9 +585,8 @@ This tool integrates the following research works:
             
             last_val = (None, None, None, [], [], [], None, "", "")
             for val in gen:
-                # 戻り値: (image, v_skel, v_moge, target_glb, bvh, fbx, obj, final_zip, status_msg, log_c)
-                # quick_tab用: (image, 3d_view, fbx, bvh, zip, obj, status, log)
-                last_val = val
+                # 戻り値: (image, v_skel, v_moge, target_glb, bvh_list, fbx, obj, final_zip, status_msg, log_c)
+                # quick_tab用: (image, 3d_view, fbx, bvh_list, zip, obj, status, log)
                 yield val[0], val[3], val[5], val[4], val[7], val[6], val[8], val[9]
         
         quick_job = quick_run_btn.click(

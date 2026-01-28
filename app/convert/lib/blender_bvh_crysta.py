@@ -3,8 +3,13 @@ import os
 import sys
 import math
 
-def convert_fbx_to_bvh_crysta(fbx_path, export_path):
-    print(f"Converting FBX to BVH for Clip Studio Paint...")
+def convert_fbx_to_bvh_crysta(fbx_path, export_path, mode='std'):
+    """
+    mode:
+      'std'      : Euler X=-90 (Standard)
+      'quat_x90' : Quaternion (1,1,0,0) (Inverted pose fix)
+    """
+    print(f"Converting FBX to BVH for Clip Studio Paint (Mode: {mode})...")
     print(f"Source: {fbx_path}")
     print(f"Target: {export_path}")
     
@@ -37,8 +42,15 @@ def convert_fbx_to_bvh_crysta(fbx_path, export_path):
     rig.select_set(True)
     bpy.context.view_layer.objects.active = rig
     
-    print("Rotating world context: Blender -Y -> World Z (Correcting Upside-Down)...")
-    rig.rotation_euler = (math.radians(-90), 0, 0)
+    if mode == 'quat_x90':
+        print("Rotating world context: QUATERNION (1, 1, 0, 0) for Inverted Poses...")
+        rig.rotation_mode = 'QUATERNION'
+        rig.rotation_quaternion = (1, 1, 0, 0)
+    else:
+        print("Rotating world context: STANDARD Euler X=-90...")
+        rig.rotation_mode = 'XYZ'
+        rig.rotation_euler = (math.radians(-90), 0, 0)
+
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     
     # 5. Export to BVH
@@ -66,7 +78,8 @@ if __name__ == "__main__":
             
         fbx_file = args[0]
         export_file = args[1]
-        convert_fbx_to_bvh_crysta(fbx_file, export_file)
+        rot_mode = args[2] if len(args) > 2 else 'std'
+        convert_fbx_to_bvh_crysta(fbx_file, export_file, rot_mode)
     except (ValueError, IndexError):
         print("Error: Invalid arguments.")
         sys.exit(1)

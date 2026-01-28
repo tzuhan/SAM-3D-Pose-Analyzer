@@ -110,17 +110,21 @@ def create_and_export_fbx_final(data, export_path):
     v_spine1 = v_hips + (v_neck - v_hips) * 0.65 # Chest (Thoracic)
     v_spine2 = v_neck # UpperChest Top = Neck Base
     
-    # Head Orientation
-    f_fw = (v_nose - v_head_base).normalized() if (v_nose - v_head_base).length > 1e-6 else Vector((0,1,0))
-    f_si = (fix_c(j_u[3]) - fix_c(j_u[4])).normalized() if (fix_c(j_u[3]) - fix_c(j_u[4])).length > 1e-6 else Vector((1,0,0))
-    up_v = f_si.cross(f_fw).normalized()
-    if up_v.z < 0: up_v = -up_v
-    v_head_top = v_head_base + up_v * 0.15
+    # Head Orientation: Vertex 2811 (Mesh Shape Only)
+    v_crown = fix_c(verts[2811])
+    v_head_top = v_crown
+    # Check if upside down relative to body
+    up_v = (v_head_top - v_head_base).normalized()
+    v_body_dir = (v_neck - v_spine1).normalized()
+    if up_v.dot(v_body_dir) < 0:
+        up_v = -up_v
+        v_head_top = v_head_base + up_v * 0.15
     
     v_spine_head = v_hips + (v_spine0 - v_hips) * 0.4
     
-    # Hips Orientation (Upward - Standard Unity/Rigify)
-    v_hips_tail_up = v_hips + Vector((0, 0, 0.1)) 
+    # Hips Orientation (Unlocked - Following Spine)
+    v_body_dir = (v_spine0 - v_hips).normalized()
+    v_hips_tail = v_hips + v_body_dir * 0.1
 
     # Hands/Feet Ends
     l_h_end = (fix_c(j_u[62]) + fix_c(j_u[53])) / 2 
@@ -136,11 +140,11 @@ def create_and_export_fbx_final(data, export_path):
 
     # --- STRUCTURE DEFINITION (MHR Name -> Unity Name) ---
     struct = [
-        # Hips: Points UP. Head=Pelvis, Tail=Waist.
-        (None, "Hips", v_hips, v_hips_tail_up, False),
+        # Hips: Points towards Spine. Head=Pelvis, Tail=SpineBase.
+        (None, "Hips", v_hips, v_hips_tail, False),
         
-        # Spine: Connects to Hips Tail (Waist).
-        ("Hips", "Spine", v_hips_tail_up, v_spine0, True), 
+        # Spine: Connects to Hips Tail (SpineBase).
+        ("Hips", "Spine", v_hips_tail, v_spine0, True), 
         
         ("Spine", "Chest", v_spine0, v_spine1, True),
         ("Chest", "UpperChest", v_spine1, v_spine2, True),

@@ -30,3 +30,6 @@ Thumbs.db
 
 # Backups
 backup/
+
+# Tests
+tests/

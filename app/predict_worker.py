@@ -460,9 +460,15 @@ if __name__ == "__main__":
             subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_humanoid_builder_v2.py"), "--", tjp, fbp], capture_output=False)
             if os.path.exists(fbp): 
                 print(f"      ✅ FBX generated for ID {pid}")
-                subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_bvh_crysta.py"), "--", fbp, os.path.join(OUTPUT_DIR, f"output_{pid}.bvh")], capture_output=False)
-                if os.path.exists(os.path.join(OUTPUT_DIR, f"output_{pid}.bvh")):
-                    print(f"      ✅ BVH generated for ID {pid}")
+                # 1. Standard BVH
+                bvh_std = os.path.join(OUTPUT_DIR, f"output_{pid}.bvh")
+                subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_bvh_crysta.py"), "--", fbp, bvh_std, "std"], capture_output=False)
+                if os.path.exists(bvh_std): print(f"      ✅ Standard BVH generated")
+                
+                # 2. Inverted Pose BVH (Crysta twist fix)
+                bvh_inv = os.path.join(OUTPUT_DIR, f"output_{pid}_inverted.bvh")
+                subprocess.run(["blender", "--background", "--python", os.path.join(BASE_DIR, "convert", "lib", "blender_bvh_crysta.py"), "--", fbp, bvh_inv, "quat_x90"], capture_output=False)
+                if os.path.exists(bvh_inv): print(f"      ✅ Inverted Pose BVH generated")
             else:
                 print(f"      ⚠ FBX generation FAILED for ID {pid}")
             
