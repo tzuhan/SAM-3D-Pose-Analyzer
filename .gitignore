@@ -30,6 +30,9 @@ tests/
 docs/
 app/wrapper doc/
 
+# Environment variables (contains secrets)
+.env
+
 # OS
 .DS_Store
 Thumbs.db

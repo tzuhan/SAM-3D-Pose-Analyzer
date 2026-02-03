@@ -3,6 +3,12 @@
 
 echo "🚀 SAM 3D Pose Analyzer の環境を構築中..."
 
+# Load HF_TOKEN from .env file if it exists
+if [ -f ".env" ]; then
+    echo "📄 Loading environment variables from .env file..."
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # 1. システムライブラリのインストール
 apt-get update && apt-get install -y \
     ffmpeg libsm6 libxext6 libgl1-mesa-glx \
@@ -26,23 +32,41 @@ pushd repos
 popd
 
 # 4. モデルのダウンロード (Python スクリプトで確実に実行)
-mkdir -p weights/body/assets
+mkdir -p weights/assets
 echo "📦 モデルチェックポイントを準備中..."
 
 cat <<EOF > download_models.py
 import os
-from huggingface_hub import hf_hub_download
+import shutil
+from huggingface_hub import hf_hub_download, login
 
 def download():
-    # SAM 3D Body models
+    # Login with HF_TOKEN if available
+    hf_token = os.environ.get("HF_TOKEN")
+    if hf_token:
+        print("🔑 Using HF_TOKEN from environment...")
+        login(token=hf_token)
+    else:
+        print("⚠️  No HF_TOKEN found. Using cached credentials or anonymous access.")
+
+    os.makedirs("weights/assets", exist_ok=True)
+
+    # SAM 3D Body models - download and copy to correct location
     print("Downloading SAM 3D Body models...")
-    hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="model.ckpt", local_dir="weights/body")
-    hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="assets/mhr_model.pt", local_dir="weights/body")
-    hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="model_config.yaml", local_dir="weights/body")
-    
-    # SAM 3 model は HumanDetector の内部処理(Online fallback)に任せるか、
-    # もしくは gated repo の規約に同意した状態で build_sam3_image_model が行う自動取得を利用します。
-    pass
+
+    ckpt_path = hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="model.ckpt")
+    shutil.copy(ckpt_path, "weights/model.ckpt")
+    print("✓ Copied model.ckpt to weights/")
+
+    mhr_path = hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="assets/mhr_model.pt")
+    shutil.copy(mhr_path, "weights/assets/mhr_model.pt")
+    print("✓ Copied mhr_model.pt to weights/assets/")
+
+    cfg_path = hf_hub_download(repo_id="facebook/sam-3d-body-dinov3", filename="model_config.yaml")
+    shutil.copy(cfg_path, "weights/model_config.yaml")
+    print("✓ Copied model_config.yaml to weights/")
+
+    print("✅ Model download complete!")
 
 if __name__ == "__main__":
     download()

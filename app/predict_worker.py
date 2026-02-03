@@ -120,7 +120,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     time_start = time.time()
-    cleanup_outputs(); device = "cuda" if torch.cuda.is_available() else "cpu"
+    cleanup_outputs()
+    # Device selection: CUDA > CPU (MPS not fully supported by SAM 3D Body)
+    # Note: MPS (Apple Silicon) has compatibility issues with some CUDA-specific operations
+    # in SAM 3D Body model, so we fall back to CPU for macOS
+    if torch.cuda.is_available():
+        device = "cuda"
+    else:
+        device = "cpu"
+        if torch.backends.mps.is_available():
+            print("⚠️  MPS available but using CPU for SAM 3D Body compatibility")
+    print(f"📱 Using device: {device}")
     
     # 画像読み込み (EXIF回転対応 & 自動リサイズ)
     try:

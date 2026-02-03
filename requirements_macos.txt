@@ -1,0 +1,89 @@
+# ===========================================
+# SAM 3D Pose Analyzer - macOS Requirements
+# ===========================================
+# Tested for: macOS (Intel/Apple Silicon)
+# Recommended Python: 3.10 or 3.11 (NOT 3.13)
+# ===========================================
+
+# ------------------------------------------
+# PyTorch (MUST be installed FIRST)
+# ------------------------------------------
+# For Apple Silicon (M1/M2/M3/M4), MPS backend is supported
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# ------------------------------------------
+# Core Dependencies
+# ------------------------------------------
+numpy<2.0
+opencv-python
+pillow
+matplotlib
+gradio
+scipy
+trimesh
+pyrender
+tqdm
+huggingface_hub<1.0
+pyyaml
+# decord - REMOVED: not available for macOS ARM, and not used in code
+yacs
+timm
+python-dotenv
+json-tricks
+
+# ------------------------------------------
+# Detectron2 - DO NOT INCLUDE HERE
+# ------------------------------------------
+# detectron2 requires torch to be installed FIRST
+# It will be installed separately by setup_macos.sh
+
+# ------------------------------------------
+# SAM 3D Body, MoGe & SAM3 Dependencies
+# ------------------------------------------
+pytorch-lightning
+roma
+loguru
+einops
+scikit-image
+pyrootutils
+joblib
+dill
+pandas
+seaborn
+jsonlines
+xtcocotools
+optree
+psutil
+omegaconf
+fvcore
+iopath
+ninja
+gdown
+ftfy
+regex
+pycocotools
+numba
+python-rapidjson
+scikit-learn
+torchmetrics
+fairscale
+submitit
+zstandard
+rich
+hydra-core
+webdataset
+networkx==3.2.1
+appdirs
+
+# ------------------------------------------
+# Custom Git dependencies
+# ------------------------------------------
+git+https://github.com/EasternJournalist/pipeline.git@866f059d2a05cde05e4a52211ec5051fd5f276d6
+
+# ------------------------------------------
+# REMOVED for macOS (Linux/NVIDIA only):
+# - triton (requires Linux + NVIDIA GPU)
+# - chumpy (deprecated, causes issues)
+# ------------------------------------------

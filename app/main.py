@@ -8,6 +8,11 @@ import json
 from datetime import datetime
 import gradio as gr
 from PIL import Image
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+# This loads HF_TOKEN for HuggingFace authentication
+load_dotenv()
 
 # パス設定
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -172,7 +177,7 @@ def create_app():
                 with gr.Row():
                     with gr.Column(scale=1):
                         gr.Markdown("### 📸 画像のアップロード")
-                        quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350, image_mode="RGBA", format="png", sources=["upload", "clipboard", "webcam"])
+                        quick_input_img = gr.Image(label="人物が1人写っている画像を選択", type="filepath", height=350, image_mode="RGB", format="png", sources=["upload", "clipboard", "webcam"])
                         quick_run_btn = gr.Button("⚡ 3D復元を一括実行", variant="primary", size="lg")
                         quick_cancel_btn = gr.Button("⏹️ 停止", variant="stop")
                         quick_log = gr.Textbox(label="実行ログ", lines=6, max_lines=10, interactive=False)
@@ -241,7 +246,7 @@ def create_app():
                     with gr.TabItem("🔍 Step 1: 人物スキャン", id="sub_det"):
                         with gr.Row():
                             with gr.Column(scale=1): # 左重心
-                                input_img = gr.Image(label="入力画像", type="filepath", height=280, image_mode="RGBA", format="png", sources=["upload", "clipboard", "webcam"])
+                                input_img = gr.Image(label="入力画像", type="filepath", height=280, image_mode="RGB", format="png", sources=["upload", "clipboard", "webcam"])
                                 
                                 gr.Markdown("### 🎯 生成対象の選択")
                                 with gr.Group():
