@@ -41,10 +41,15 @@ Meta の **SAM 3D Body** をベースに、単一画像から即座に 3D リフ
 本ツールを利用するには、事前に **Hugging Face でのモデル利用承諾** が必要です。
 
 ### 🛠️ 事前準備
-1.  **Hugging Face アカウント作成 & トークン取得**: [Access Tokens](https://huggingface.co/settings/tokens) からトークンを取得。
+1.  **Hugging Face アカウント作成 & トークン取得**: [Access Tokens](https://huggingface.co/settings/tokens) からトークンを取得（Read権限）。
 2.  **モデルの利用承諾**: 以下のリポジトリで **"Agree and access repository"** をクリック。
     - [facebook/sam-3d-body-dinov3](https://huggingface.co/facebook/sam-3d-body-dinov3)
     - [facebook/sam3](https://huggingface.co/facebook/sam3)
+3.  **環境変数の設定（ローカル環境のみ）**: `.env` ファイルにトークンを設定。
+    ```bash
+    cp .env.example .env
+    # .env ファイルを編集して HF_TOKEN を設定
+    ```
 
 ---
 
@@ -56,24 +61,106 @@ Meta の **SAM 3D Body** をベースに、単一画像から即座に 3D リフ
     - **Step 2**: 環境構築（約 10〜15 分）。
     - **Step 3**: 起動後の **⚡ クイック復元タブ** を使えば、約 60~120秒で 3D モデルが手に入ります。
 
-### 2. ローカル環境 (Local Installation)
+### 2. ローカル環境 - Linux/WSL2 (Local Installation)
 WSL2 または Linux 環境での動作を想定しています。RTX3060tiで動作確認しました。
+
+**必要条件:**
+- Python 3.10 または 3.11
+- NVIDIA GPU + CUDA（推奨）
 
 ```bash
 # リポジトリの取得
 git clone https://github.com/chchannel/SAM-3D-Pose-Analyzer.git
 cd SAM-3D-Pose-Analyzer
 
-# 依存ライブラリのインストール
+# システム依存ライブラリのインストール（Ubuntu/WSL2）
+sudo apt update
+sudo apt install -y python3-venv python3-pip ffmpeg libsm6 libxext6 libgl1-mesa-glx \
+    libosmesa6 libosmesa6-dev libglu1-mesa freeglut3-dev blender
+
+# 仮想環境の作成と有効化
+python3 -m venv .venv
+source .venv/bin/activate
+
+# HuggingFace トークンの設定（以下のいずれかの方法）
+# 方法1: .env ファイルを使用
+cp .env.example .env
+nano .env  # HF_TOKEN=hf_xxxxx の形式でトークンを設定
+
+# 方法2: HuggingFace CLI でログイン（.env の代わりに使用可能）
+# pip install huggingface_hub && huggingface-cli login
+
+# PyTorch のインストール（CUDA 12.1 版）
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# numpy のインストール（他のパッケージのビルドに必要）
+pip install numpy
+
+# detectron2 のインストール（PyTorch が必要なため個別にインストール）
+pip install --no-build-isolation 'git+https://github.com/facebookresearch/detectron2.git'
+
+# chumpy のインストール（ビルド問題回避のため個別にインストール）
+pip install --no-build-isolation chumpy
+
+# その他の依存ライブラリのインストール
 pip install -r requirements.txt
 
 # 外部リポジトリとモデルのセットアップ（初回のみ）
-bash setup_colab.sh 
+bash setup_colab.sh
 
 # アプリの起動
 python app/main.py
-launch_sam3d.batをクリックすることでも起動します
 ```
+
+**注意事項:**
+- Ubuntu 23.04 以降では仮想環境（venv）が必須です
+- 次回以降は `source .venv/bin/activate` で仮想環境を有効化してから起動してください
+- NVIDIA GPU がない場合は、PyTorch を CPU 版に変更してください：
+  ```bash
+  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+  ```
+
+### 3. macOS (Apple Silicon / Intel)
+
+macOS での実行には専用のセットアップスクリプトを使用します。
+
+**必要条件:**
+- Python 3.10 または 3.11（3.13 は非対応）
+- pyenv（推奨）または Homebrew でインストールした Python 3.11
+
+```bash
+# リポジトリの取得
+git clone https://github.com/chchannel/SAM-3D-Pose-Analyzer.git
+cd SAM-3D-Pose-Analyzer
+
+# Python 3.11 のインストール（pyenv を使用する場合）
+brew install pyenv
+pyenv install 3.11.9
+
+# HuggingFace トークンの設定（以下のいずれかの方法）
+# 方法1: .env ファイルを使用
+cp .env.example .env
+nano .env  # HF_TOKEN=hf_xxxxx の形式でトークンを設定
+
+# 方法2: HuggingFace CLI でログイン（.env の代わりに使用可能）
+# pip install huggingface_hub && huggingface-cli login
+
+# macOS 用セットアップスクリプトを実行（依存関係のインストール）
+./setup_macos.sh
+
+# 外部リポジトリとモデルのダウンロード（初回のみ）
+./download_models_macos.sh
+
+# アプリの起動
+source .venv/bin/activate
+python app/main.py
+```
+
+**注意事項:**
+- macOS では CPU または Apple MPS（Metal Performance Shaders）で実行されます
+- NVIDIA GPU がないため、Colab より処理が遅くなります
+- Apple Silicon (M1/M2/M3/M4) では MPS による GPU アクセラレーションが利用可能です
+- `.env` ファイルは `.gitignore` に含まれているため、誤ってコミットされることはありません
 
 ## 📜 ライセンス (Licensing)
 
